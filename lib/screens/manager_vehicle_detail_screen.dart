@@ -1,0 +1,235 @@
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
+import 'package:pos_app/models/vehicle.dart'; // Import Vehicle model
+import 'package:pos_app/widgets/bottom_navigation_bar.dart'; // Import bottom navigation bar
+import 'package:pos_app/widgets/timer_widget.dart'; // Import TimerWidget
+import 'manager_vehicles_list_screen.dart'; // Import vehicle list screen
+import 'manager_scan_vehicle_screen.dart'; // Import scan screen
+import 'manager_history_screen.dart'; // Import history screen
+import 'package:pos_app/models/category.dart'; // Import Category model
+import 'product_selection_screen.dart'; // Import ProductSelectionScreen
+import 'manager_order_confirmation_screen.dart'; // Import order confirmation screen
+
+class ManagerVehicleDetailScreen extends StatefulWidget { // Converted to StatefulWidget
+  final String vehicleId;
+
+  const ManagerVehicleDetailScreen({Key? key, required this.vehicleId}) : super(key: key);
+
+  @override
+  _ManagerVehicleDetailScreenState createState() => _ManagerVehicleDetailScreenState();
+}
+
+class _ManagerVehicleDetailScreenState extends State<ManagerVehicleDetailScreen> { // Added State class
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Детали Машины'),
+      ),
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('vehicles')
+            .doc(widget.vehicleId)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(child: Text('Ошибка загрузки деталей машины: ${snapshot.error}'));
+          }
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData || !snapshot.data!.exists) {
+            return const Center(child: Text('Машина не найдена'));
+          }
+
+          final vehicle = Vehicle.fromFirestore(snapshot.data!);
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Display vehicle photo and license plate
+                Center(
+                  child: Column(
+                    children: [
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundImage: vehicle.photoUrl.isNotEmpty
+                            ? NetworkImage(vehicle.photoUrl)
+                            : null,
+                        child: vehicle.photoUrl.isEmpty
+                            ? const Icon(Icons.directions_car, size: 50)
+                            : null,
+                      ),
+                      const SizedBox(height: 8.0),
+                      Text(
+                        vehicle.licensePlate,
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                      const SizedBox(height: 8.0),
+                      // Display timer for active vehicles, or total time for completed
+                      vehicle.status == 'active'
+                          ? TimerWidget(entryTime: vehicle.entryTime)
+                          : Text('Время обслуживания: ${(vehicle.totalTime / 60).floor()}h ${vehicle.totalTime % 60}m'),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24.0),
+
+                // Sections for adding items (ИНСТРУМЕНТЫ, МАГАЗИН, РАСХОДНИКИ, ШТРАФЫ)
+                Text(
+                  'ДОБАВИТЬ ТОВАРЫ/УСЛУГИ:',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8.0),
+                StreamBuilder<List<Category>>(
+                  stream: FirebaseFirestore.instance
+                      .collection('categories')
+                      .orderBy('displayName') // Order categories alphabetically
+                      .snapshots()
+                      .map((snapshot) => snapshot.docs.map((doc) => Category.fromFirestore(doc)).toList()),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasError) {
+                      return Center(child: Text('Ошибка загрузки категорий: ${snapshot.error}'));
+                    }
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return const Center(child: Text('Нет доступных категорий'));
+                    }
+
+                    final categories = snapshot.data!;
+
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: categories.length,
+                      itemBuilder: (context, index) {
+                        final category = categories[index];
+                        // TODO: Implement expandable section for each category to show products
+                        return ListTile(
+                          title: Text(category.displayName),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ProductSelectionScreen(
+                                  vehicleId: vehicle.id,
+                                  categoryId: category.id,
+                                  categoryDisplayName: category.displayName,
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 24.0),
+                Text(
+                  'ДОБАВЛЕННЫЕ ТОВАРЫ:',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8.0),
+                // Display list of added items
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: vehicle.items.length,
+                  itemBuilder: (context, index) {
+                    final item = vehicle.items[index];
+                    return ListTile(
+                      title: Text('${item['name']} x${item['quantity']}'),
+                      trailing: Text('${item['price'] * item['quantity']} тнг'),
+                    );
+                  },
+                ),
+                const Divider(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'ИТОГО:',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      Text(
+                        '${vehicle.totalAmount} тнг',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24.0),
+                // "ЗАВЕРШИТЬ" button
+                ElevatedButton(
+                  onPressed: () async {
+                    // Logic to complete the service
+                    try {
+                      // Get current server time
+                      DateTime serverTime = await FirebaseFirestore.instance.collection('serverTime').add({'timestamp': FieldValue.serverTimestamp()}).then((ref) => ref.get()).then((snapshot) => snapshot.get('timestamp').toDate());
+
+                      // Calculate total time in minutes
+                      int totalMinutes = serverTime.difference(vehicle.entryTime.toDate()).inMinutes;
+
+                      // Update vehicle status to 'pending' and set exit time and total time
+                      await FirebaseFirestore.instance.collection('vehicles').doc(vehicle.id).update({
+                        'status': 'pending',
+                        'exitTime': Timestamp.fromDate(serverTime),
+                        'totalTime': totalMinutes,
+                      });
+
+                      // Navigate to the order confirmation screen
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ManagerOrderConfirmationScreen(vehicleId: vehicle.id),
+                        ),
+                      );
+
+                    } catch (e) {
+                      print('Error completing service: $e');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Ошибка при завершении обслуживания: ${e.toString()}')),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  ),
+                  child: const Text('ЗАВЕРШИТЬ'),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+      bottomNavigationBar: ManagerBottomNavigationBar(
+        currentIndex: 0, // Stay on 'Выбор машины' section conceptually
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const ManagerVehiclesListScreen()),
+            );
+          } else if (index == 1) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const ManagerScanVehicleScreen()),
+            );
+          } else if (index == 2) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const ManagerHistoryScreen()),
+            );
+          }
+        },
+      ),
+    );
+  }
+}

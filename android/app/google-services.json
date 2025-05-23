@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "227382001810",
+    "project_id": "last-pos-d2c27",
+    "storage_bucket": "last-pos-d2c27.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:227382001810:android:3e8229ef5f6c5f5c1ca64b",
+        "android_client_info": {
+          "package_name": "com.last.pos"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD0sbangVvmRLBew9VXCGgRTCj-TKr4voo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
