@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'admin_pending_orders_screen.dart'; // Import pending orders screen
 import 'admin_products_screen.dart'; // Placeholder for products screen
+import 'admin_settings_screen.dart'; // Import admin settings screen
 import 'login_screen.dart'; // Import login screen for logout
 
 class AdminDashboardScreen extends StatelessWidget {
@@ -30,16 +30,6 @@ class AdminDashboardScreen extends StatelessWidget {
           children: [
             ElevatedButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AdminPendingOrdersScreen()), // Navigate to pending orders list
-                );
-              },
-              child: const Text('Проверка Заказов'),
-            ),
-            const SizedBox(height: 16.0),
-            ElevatedButton(
-              onPressed: () {
                  Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const AdminProductsScreen()),
@@ -47,7 +37,18 @@ class AdminDashboardScreen extends StatelessWidget {
               },
               child: const Text('Управление Товарами'),
             ),
-            // TODO: Add more admin options like Analytics, Settings, etc.
+            const SizedBox(height: 16.0),
+            const SizedBox(height: 16.0),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AdminSettingsScreen()),
+                );
+              },
+              child: const Text('Настройки'),
+            ),
+            // TODO: Add more admin options like Analytics, etc.
           ],
         ),
       ),

@@ -12,6 +12,7 @@ class Vehicle {
   final String managerId;
   final List<Map<String, dynamic>> items;
   final double totalAmount;
+  final double? timeBasedCost; // New field for time-based cost
   final String? paymentMethod; // "cash" | "qr"
   final String paymentStatus; // "pending" | "approved" | "rejected" | "completed"
   final String? adminComment;
@@ -29,6 +30,7 @@ class Vehicle {
     required this.managerId,
     required this.items,
     required this.totalAmount,
+    this.timeBasedCost, // Initialize new field
     this.paymentMethod,
     required this.paymentStatus,
     this.adminComment,
@@ -58,6 +60,7 @@ class Vehicle {
         };
       }).toList(),
       totalAmount: (data['totalAmount'] ?? 0).toDouble(),
+      timeBasedCost: (data['timeBasedCost'] as num?)?.toDouble(), // Parse new field
       paymentMethod: data['paymentMethod'],
       paymentStatus: data['paymentStatus'] ?? 'pending',
       adminComment: data['adminComment'],
@@ -78,6 +81,7 @@ class Vehicle {
       'managerId': managerId,
       'items': items,
       'totalAmount': totalAmount,
+      'timeBasedCost': timeBasedCost, // Include new field in toMap
       'paymentMethod': paymentMethod,
       'paymentStatus': paymentStatus,
       'adminComment': adminComment,
