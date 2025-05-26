@@ -4,8 +4,55 @@ import 'package:pos_app/models/category.dart'; // Import Category model
 import 'admin_product_list_screen.dart'; // Import product list screen
 import 'admin_add_category_screen.dart'; // Import add category screen
 
-class AdminProductsScreen extends StatelessWidget {
+class AdminProductsScreen extends StatefulWidget {
   const AdminProductsScreen({Key? key}) : super(key: key);
+
+  @override
+  _AdminProductsScreenState createState() => _AdminProductsScreenState();
+}
+
+class _AdminProductsScreenState extends State<AdminProductsScreen> {
+  // Function to delete a category
+  Future<void> _deleteCategory(BuildContext context, String categoryId, String categoryName) async {
+    // Show confirmation dialog
+    bool confirmDelete = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Подтвердить удаление'),
+          content: Text('Вы уверены, что хотите удалить категорию "$categoryName"? Все товары в этой категории останутся без категории.'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Отмена'),
+              onPressed: () {
+                Navigator.of(context).pop(false); // Dismiss dialog and return false
+              },
+            ),
+            TextButton(
+              child: const Text('Удалить'),
+              onPressed: () {
+                Navigator.of(context).pop(true); // Dismiss dialog and return true
+              },
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmDelete == true) {
+      try {
+        await FirebaseFirestore.instance.collection('categories').doc(categoryId).delete();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Категория успешно удалена')),
+        );
+      } catch (e) {
+        print('Error deleting category: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка при удалении категории: ${e.toString()}')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +100,31 @@ class AdminProductsScreen extends StatelessWidget {
                     final category = categories[index];
                     return ListTile(
                       title: Text(category.displayName),
-                      trailing: const Icon(Icons.arrow_forward_ios),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.arrow_forward_ios),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AdminProductListScreen(
+                                    categoryId: category.id,
+                                    categoryDisplayName: category.displayName,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () {
+                              _deleteCategory(context, category.id, category.displayName);
+                            },
+                          ),
+                        ],
+                      ),
                       onTap: () {
                         Navigator.push(
                           context,

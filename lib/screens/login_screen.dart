@@ -15,11 +15,19 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _managerIdController = TextEditingController(); // Controller for manager ID
 
   void _login() async { // Make _login async
     if (_formKey.currentState!.validate()) {
       String email = _emailController.text.trim();
       String password = _passwordController.text.trim();
+
+      if (email.isEmpty || password.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Пожалуйста, введите Email и Пароль')),
+        );
+        return;
+      }
 
       try {
         UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
@@ -84,10 +92,80 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _showManagerLoginDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Вход для Менеджера'),
+          content: TextField(
+            controller: _managerIdController,
+            decoration: const InputDecoration(
+              labelText: 'ID Менеджера',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Отмена'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            ElevatedButton(
+              child: const Text('Войти'),
+              onPressed: () {
+                _loginManager();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _loginManager() async {
+    String managerId = _managerIdController.text.trim();
+    if (managerId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Пожалуйста, введите ID Менеджера')),
+      );
+      return;
+    }
+
+    try {
+      // Query Firestore for a manager with the given ID
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('role', isEqualTo: 'manager')
+          .where('managerId', isEqualTo: managerId) // Assuming 'managerId' is a field in user documents
+          .limit(1)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        // Manager found, navigate to manager dashboard
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const ManagerVehiclesListScreen()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Менеджер с таким ID не найден')),
+        );
+      }
+    } catch (e) {
+      print('Manager login error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Произошла ошибка при входе менеджера: $e')),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _managerIdController.dispose(); // Dispose manager ID controller
     super.dispose();
   }
 
@@ -131,11 +209,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _passwordController,
                   obscureText: true,
                   decoration: const InputDecoration(
-                    labelText: 'Пароль',
+                    labelText: 'Пароль (для Администратора)',
                     border: OutlineInputBorder(),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
+                    if (value == null || value.isEmpty && _emailController.text.isNotEmpty) {
                       return 'Пожалуйста, введите Пароль';
                     }
                     return null;
@@ -147,7 +225,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                   ),
-                  child: const Text('ВОЙТИ'),
+                  child: const Text('ВОЙТИ КАК АДМИНИСТРАТОР'),
+                ),
+                const SizedBox(height: 16.0),
+                OutlinedButton(
+                  onPressed: _showManagerLoginDialog,
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  ),
+                  child: const Text('ВОЙТИ КАК МЕНЕДЖЕР'),
                 ),
               ],
             ),

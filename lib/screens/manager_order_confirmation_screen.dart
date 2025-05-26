@@ -131,11 +131,44 @@ class ManagerOrderConfirmationScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
+                        'Стоимость товаров/услуг:',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      Text(
+                        '${(vehicle.totalAmount - (vehicle.timeBasedCost ?? 0.0)).toStringAsFixed(2)} тнг', // Subtract timeBasedCost to get original product total
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Стоимость за время:',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      Text(
+                        '${(vehicle.timeBasedCost ?? 0.0).toStringAsFixed(2)} тнг',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
                         'ИТОГО:',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       Text(
-                        '${vehicle.totalAmount} тнг',
+                        '${vehicle.totalAmount.toStringAsFixed(2)} тнг',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                     ],

@@ -28,7 +28,7 @@ class Product {
       id: doc.id,
       name: data['name'] ?? '',
       description: data['description'] ?? '',
-      price: (data['price'] ?? 0).toDouble(),
+      price: (data['price'] as num? ?? 0.0).toDouble(), // Ensure price is always double
       categoryId: data['categoryId'] ?? '',
       createdAt: data['createdAt'] ?? Timestamp.now(),
       updatedAt: data['updatedAt'] ?? Timestamp.now(),
