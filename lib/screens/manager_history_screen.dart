@@ -8,9 +8,16 @@ import 'manager_scan_vehicle_screen.dart'; // Import scan screen
 import 'manager_vehicle_detail_screen.dart'; // Import detail screen
 import 'package:pos_app/models/app_settings.dart'; // Import AppSettings model
 
-class ManagerHistoryScreen extends StatelessWidget {
-  const ManagerHistoryScreen({Key? key}) : super(key: key);
+class ManagerHistoryScreen extends StatefulWidget { // Changed to StatefulWidget to use widget.managerId
+  final String managerId;
 
+  const ManagerHistoryScreen({Key? key, required this.managerId}) : super(key: key);
+
+  @override
+  _ManagerHistoryScreenState createState() => _ManagerHistoryScreenState();
+}
+
+class _ManagerHistoryScreenState extends State<ManagerHistoryScreen> { // Created State class
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -69,7 +76,10 @@ class ManagerHistoryScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => ManagerVehicleDetailScreen(vehicleId: vehicle.id),
+                        builder: (context) => ManagerVehicleDetailScreen(
+                          vehicleId: vehicle.id,
+                          managerId: widget.managerId, // Pass managerId here
+                        ),
                         ),
                       );
                     },

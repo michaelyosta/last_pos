@@ -79,9 +79,10 @@ class PaymentQrScreen extends StatelessWidget {
         );
 
         // Navigate back to the active vehicles list
+        // managerId is already fetched and null-checked at the beginning of this method.
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const ManagerVehiclesListScreen()),
+          MaterialPageRoute(builder: (context) => ManagerVehiclesListScreen(managerId: managerId!)), // managerId is confirmed not null here
         );
       }
 
@@ -94,9 +95,8 @@ class PaymentQrScreen extends StatelessWidget {
       }
     }
   }
-        const SnackBar(content: Text('Оплата завершена, заказ выполнен')),
-      );
 
+  // Removed extraneous SnackBar definition that was here
 
   @override
   Widget build(BuildContext context) {

@@ -12,10 +12,15 @@ import 'manager_order_confirmation_screen.dart'; // Import order confirmation sc
 import 'package:pos_app/models/app_settings.dart'; // Import AppSettings model
 import 'package:pos_app/screens/payment_qr_screen.dart'; // Import PaymentQrScreen
 
-class ManagerVehicleDetailScreen extends StatefulWidget { // Converted to StatefulWidget
+class ManagerVehicleDetailScreen extends StatefulWidget {
   final String vehicleId;
+  final String managerId; // Added managerId
 
-  const ManagerVehicleDetailScreen({Key? key, required this.vehicleId}) : super(key: key);
+  const ManagerVehicleDetailScreen({
+    Key? key,
+    required this.vehicleId,
+    required this.managerId, // Added managerId
+  }) : super(key: key);
 
   @override
   _ManagerVehicleDetailScreenState createState() => _ManagerVehicleDetailScreenState();
@@ -277,7 +282,7 @@ class _ManagerVehicleDetailScreenState extends State<ManagerVehicleDetailScreen>
                               return AlertDialog(
                                 title: const Text('Выберите способ оплаты'),
                                 content: Column(
-                                  mainAxisSize: MainAxisSize.AxisSize.min,
+                                  mainAxisSize: MainAxisSize.min,
                                   children: <Widget>[
                                     ListTile(
                                       leading: const Icon(Icons.qr_code),
@@ -338,7 +343,7 @@ class _ManagerVehicleDetailScreenState extends State<ManagerVehicleDetailScreen>
           if (index == 0) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const ManagerVehiclesListScreen()),
+              MaterialPageRoute(builder: (context) => ManagerVehiclesListScreen(managerId: widget.managerId)),
             );
           } else if (index == 1) {
             Navigator.pushReplacement(
@@ -348,7 +353,7 @@ class _ManagerVehicleDetailScreenState extends State<ManagerVehicleDetailScreen>
           } else if (index == 2) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const ManagerHistoryScreen()),
+              MaterialPageRoute(builder: (context) => ManagerHistoryScreen(managerId: widget.managerId)),
             );
           }
         },

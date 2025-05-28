@@ -43,7 +43,10 @@ class AdminDashboardScreen extends StatelessWidget {
             const SizedBox(height: 16.0),
             ElevatedButton(
               onPressed: () {
-                Navigator.pushNamed(context, AdminManagerReportsScreen.routeName);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AdminManagerReportsScreen()),
+                );
               },
               child: const Text('Отчеты по Менеджерам'),
             ),
@@ -60,7 +63,10 @@ class AdminDashboardScreen extends StatelessWidget {
             const SizedBox(height: 16.0),
             ElevatedButton(
               onPressed: () {
-                Navigator.pushNamed(context, AdminCreateManagerScreen.routeName);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AdminCreateManagerScreen()),
+                );
               },
               child: const Text('Создать Менеджера'),
             ),
