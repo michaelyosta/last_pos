@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
+import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth
 import 'package:pos_app/models/vehicle.dart'; // Import Vehicle model
 import 'manager_vehicles_list_screen.dart'; // Import vehicle list screen for navigation
 import 'package:pos_app/models/app_settings.dart'; // Import AppSettings model
@@ -24,6 +25,19 @@ class PaymentQrScreen extends StatelessWidget {
       // Get current server time
       DateTime serverTime = await FirebaseFirestore.instance.collection('serverTime').add({'timestamp': FieldValue.serverTimestamp()}).then((ref) => ref.get()).then((snapshot) => snapshot.get('timestamp').toDate());
 
+      // Get current manager ID
+      String? managerId = FirebaseAuth.instance.currentUser?.uid;
+
+      if (managerId == null) {
+        // print('Error: Manager ID is null. Cannot complete payment without manager ID.');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Ошибка: ID менеджера не найден. Невозможно завершить платеж.')),
+          );
+        }
+        return; // Do not proceed if managerId is null
+      }
+
       // Fetch the vehicle to get its entry time and current total amount
       DocumentSnapshot vehicleDoc = await FirebaseFirestore.instance.collection('vehicles').doc(vehicleId).get();
       Vehicle vehicle = Vehicle.fromFirestore(vehicleDoc);
@@ -42,8 +56,7 @@ class PaymentQrScreen extends StatelessWidget {
       // Calculate new total amount (should be consistent with what was passed)
       double newTotalAmount = vehicle.totalAmount + timeBasedCost;
 
-
-      await FirebaseFirestore.instance.collection('vehicles').doc(vehicleId).update({
+      Map<String, dynamic> updateData = {
         'paymentStatus': 'completed',
         'status': 'completed', // Mark vehicle as completed
         'paymentMethod': paymentMethod, // Set payment method from passed argument
@@ -51,25 +64,39 @@ class PaymentQrScreen extends StatelessWidget {
         'totalTime': totalMinutes,
         'timeBasedCost': timeBasedCost, // Save time-based cost
         'totalAmount': newTotalAmount, // Update total amount
-      });
+        'orderCompletionTimestamp': serverTime, // Add order completion timestamp
+      };
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      if (managerId != null) { // This check is technically redundant due to the earlier return, but good for safety
+        updateData['managerId'] = managerId; // Add manager ID
+      }
+
+      await FirebaseFirestore.instance.collection('vehicles').doc(vehicleId).update(updateData);
+
+      if (context.mounted) { // Check if the widget is still in the tree
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Оплата завершена, заказ выполнен')),
+        );
+
+        // Navigate back to the active vehicles list
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const ManagerVehiclesListScreen()),
+        );
+      }
+
+    } catch (e) {
+      // print('Error completing payment: $e');
+      if (context.mounted) { // Check if the widget is still in the tree
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка при завершении оплаты: ${e.toString()}')),
+        );
+      }
+    }
+  }
         const SnackBar(content: Text('Оплата завершена, заказ выполнен')),
       );
 
-      // Navigate back to the active vehicles list
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const ManagerVehiclesListScreen()),
-      );
-
-    } catch (e) {
-      print('Error completing payment: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка при завершении оплаты: ${e.toString()}')),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
