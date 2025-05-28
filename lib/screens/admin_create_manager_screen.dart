@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:math'; // Added for Random
 
 class AdminCreateManagerScreen extends StatefulWidget {
   static const String routeName = '/admin/create-manager';
@@ -23,8 +24,9 @@ class _AdminCreateManagerScreenState extends State<AdminCreateManagerScreen> {
   late final FirebaseAuth _auth;
   late final FirebaseFirestore _firestore;
   final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
+  final _managerNumberController = TextEditingController(); // Replaced _emailController
   final _passwordController = TextEditingController();
+  String _generatedManagerNumber = ''; // Added state for generated number
 
   bool _isLoading = false;
 
@@ -45,23 +47,47 @@ class _AdminCreateManagerScreenState extends State<AdminCreateManagerScreen> {
     });
 
     try {
+      final managerNumber = _managerNumberController.text.trim();
+      if (managerNumber.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Пожалуйста, сгенерируйте номер менеджера.')),
+          );
+        }
+        setState(() => _isLoading = false);
+        return;
+      }
+      if (managerNumber.length != 6) {
+         if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Номер менеджера должен состоять из 6 цифр.')),
+          );
+        }
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      final String managerEmail = 'manager_$managerNumber@example.com';
+
       // Create user in Firebase Authentication
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
+        email: managerEmail, // Use generated email
         password: _passwordController.text.trim(),
       );
 
       // Store manager details in Firestore
       await _firestore.collection('users').doc(userCredential.user!.uid).set({
         'name': _nameController.text.trim(),
-        'email': _emailController.text.trim(),
+        'managerNumber': managerNumber, // Store manager number
+        'email': managerEmail, // Store generated email
         'role': 'manager',
         'createdAt': Timestamp.now(),
       });
 
       // Clear fields and show success message
       _nameController.clear();
-      _emailController.clear();
+      _managerNumberController.clear(); // Clear manager number
+      _generatedManagerNumber = ''; // Reset generated number state
       _passwordController.clear();
 
       if (mounted) {
@@ -103,7 +129,7 @@ class _AdminCreateManagerScreenState extends State<AdminCreateManagerScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _emailController.dispose();
+    _managerNumberController.dispose(); // Dispose manager number controller
     _passwordController.dispose();
     super.dispose();
   }
@@ -133,18 +159,29 @@ class _AdminCreateManagerScreenState extends State<AdminCreateManagerScreen> {
               ),
               const SizedBox(height: 16),
               TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email'),
-                keyboardType: TextInputType.emailAddress,
+                controller: _managerNumberController,
+                decoration: const InputDecoration(labelText: 'Номер Менеджера (6 цифр)'),
+                readOnly: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Пожалуйста, введите email';
+                    return 'Пожалуйста, сгенерируйте номер менеджера';
                   }
-                  if (!value.contains('@') || !value.contains('.')) {
-                    return 'Пожалуйста, введите корректный email';
+                  if (value.length != 6) {
+                    return 'Номер менеджера должен состоять из 6 цифр';
                   }
                   return null;
                 },
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: () {
+                  final random = Random();
+                  _generatedManagerNumber = (random.nextInt(900000) + 100000).toString();
+                  _managerNumberController.text = _generatedManagerNumber;
+                  // Trigger validation display if form was already validated once
+                  _formKey.currentState?.validate();
+                },
+                child: const Text('Сгенерировать номер'),
               ),
               const SizedBox(height: 16),
               TextFormField(

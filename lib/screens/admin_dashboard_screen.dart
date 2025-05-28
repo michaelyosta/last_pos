@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'admin_create_manager_screen.dart'; // Import create manager screen
-import 'admin_manager_reports_screen.dart'; // Import manager reports screen
+import 'admin_manager_screen.dart'; // Import manager reports screen
 import 'admin_products_screen.dart'; // Placeholder for products screen
 import 'admin_settings_screen.dart'; // Import admin settings screen
 import 'login_screen.dart'; // Import login screen for logout
@@ -45,10 +45,10 @@ class AdminDashboardScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const AdminManagerReportsScreen()),
+                  MaterialPageRoute(builder: (context) => const AdminManagerScreen()),
                 );
               },
-              child: const Text('Отчеты по Менеджерам'),
+              child: const Text('Менеджер'),
             ),
             const SizedBox(height: 16.0),
             ElevatedButton(
@@ -59,16 +59,6 @@ class AdminDashboardScreen extends StatelessWidget {
                 );
               },
               child: const Text('Общий отчет по выручке'),
-            ),
-            const SizedBox(height: 16.0),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AdminCreateManagerScreen()),
-                );
-              },
-              child: const Text('Создать Менеджера'),
             ),
             const SizedBox(height: 16.0),
             ElevatedButton(
