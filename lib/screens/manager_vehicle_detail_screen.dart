@@ -174,7 +174,7 @@ class _ManagerVehicleDetailScreenState extends State<ManagerVehicleDetailScreen>
 
                     const SizedBox(height: 24.0),
                     Text(
-                      'ДОБАВЛЕННЫЕ ТОВАРЫ:',
+                      'ДОБАВИТЬ ТОВАРЫ/УСЛУГИ:',
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8.0),
@@ -277,7 +277,7 @@ class _ManagerVehicleDetailScreenState extends State<ManagerVehicleDetailScreen>
                               return AlertDialog(
                                 title: const Text('Выберите способ оплаты'),
                                 content: Column(
-                                  mainAxisSize: MainAxisSize.min,
+                                  mainAxisSize: MainAxisSize.AxisSize.min,
                                   children: <Widget>[
                                     ListTile(
                                       leading: const Icon(Icons.qr_code),
