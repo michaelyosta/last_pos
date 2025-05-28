@@ -25,7 +25,7 @@ class ProductSelectionScreen extends StatelessWidget {
       if (vehicleDoc.exists) {
         // Get current items and total amount
         List<dynamic> currentItems = vehicleDoc.get('items') ?? [];
-        double currentTotal = vehicleDoc.get('totalAmount') ?? 0;
+        double currentTotal = (vehicleDoc.get('totalAmount') ?? 0.0).toDouble(); // Ensure currentTotal is always double
 
         // Check if the item already exists in the list
         int existingItemIndex = currentItems.indexWhere((item) => item['id'] == product.id);

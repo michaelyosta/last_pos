@@ -8,6 +8,7 @@ import 'manager_history_screen.dart'; // Placeholder for history screen
 import 'manager_vehicle_detail_screen.dart'; // Placeholder for detail screen
 import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
 import 'login_screen.dart'; // Import LoginScreen
+import 'package:pos_app/models/app_settings.dart'; // Import AppSettings model
 
 class ManagerVehiclesListScreen extends StatelessWidget {
   const ManagerVehiclesListScreen({Key? key}) : super(key: key);
@@ -36,38 +37,53 @@ class ManagerVehiclesListScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: StreamBuilder<List<Vehicle>>(
-        stream: FirebaseFirestore.instance
-            .collection('vehicles')
-            .where('status', isEqualTo: 'active')
-            .orderBy('entryTime', descending: true)
-            .snapshots()
-            .map((snapshot) => snapshot.docs.map((doc) => Vehicle.fromFirestore(doc)).toList()),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(child: Text('Ошибка загрузки: ${snapshot.error}'));
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance.collection('settings').doc('global_settings').snapshots(),
+        builder: (context, settingsSnapshot) {
+          if (settingsSnapshot.hasError) {
+            return Center(child: Text('Ошибка загрузки настроек: ${settingsSnapshot.error}'));
           }
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (settingsSnapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Нет активных машин'));
-          }
+          final AppSettings appSettings = AppSettings.fromFirestore(settingsSnapshot.data!);
+          final double pricePerMinute = appSettings.pricePerMinute;
 
-          final vehicles = snapshot.data!;
+          return StreamBuilder<List<Vehicle>>(
+            stream: FirebaseFirestore.instance
+                .collection('vehicles')
+                .where('status', isEqualTo: 'active')
+                .orderBy('entryTime', descending: true)
+                .snapshots()
+                .map((snapshot) => snapshot.docs.map((doc) => Vehicle.fromFirestore(doc)).toList()),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Center(child: Text('Ошибка загрузки: ${snapshot.error}'));
+              }
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Center(child: Text('Нет активных машин'));
+              }
 
-          return ListView.builder(
-            itemCount: vehicles.length,
-            itemBuilder: (context, index) {
-              final vehicle = vehicles[index];
-              return VehicleListItem(
-                vehicle: vehicle,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ManagerVehicleDetailScreen(vehicleId: vehicle.id),
-                    ),
+              final vehicles = snapshot.data!;
+
+              return ListView.builder(
+                itemCount: vehicles.length,
+                itemBuilder: (context, index) {
+                  final vehicle = vehicles[index];
+                  return VehicleListItem(
+                    vehicle: vehicle,
+                    pricePerMinute: pricePerMinute, // Pass pricePerMinute
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ManagerVehicleDetailScreen(vehicleId: vehicle.id),
+                        ),
+                      );
+                    },
                   );
                 },
               );

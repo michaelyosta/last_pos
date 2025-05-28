@@ -6,6 +6,7 @@ import 'package:pos_app/widgets/vehicle_list_item.dart'; // Import VehicleListIt
 import 'manager_vehicles_list_screen.dart'; // Import vehicle list screen
 import 'manager_scan_vehicle_screen.dart'; // Import scan screen
 import 'manager_vehicle_detail_screen.dart'; // Import detail screen
+import 'package:pos_app/models/app_settings.dart'; // Import AppSettings model
 
 class ManagerHistoryScreen extends StatelessWidget {
   const ManagerHistoryScreen({Key? key}) : super(key: key);
@@ -24,39 +25,54 @@ class ManagerHistoryScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: StreamBuilder<List<Vehicle>>(
-        stream: FirebaseFirestore.instance
-            .collection('vehicles')
-            .where('status', isEqualTo: 'completed') // Filter for completed vehicles
-            .orderBy('exitTime', descending: true) // Order by exit time
-            .snapshots()
-            .map((snapshot) => snapshot.docs.map((doc) => Vehicle.fromFirestore(doc)).toList()),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(child: Text('Ошибка загрузки истории: ${snapshot.error}'));
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance.collection('settings').doc('global_settings').snapshots(),
+        builder: (context, settingsSnapshot) {
+          if (settingsSnapshot.hasError) {
+            return Center(child: Text('Ошибка загрузки настроек: ${settingsSnapshot.error}'));
           }
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (settingsSnapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('История обслуживания пуста'));
-          }
+          final AppSettings appSettings = AppSettings.fromFirestore(settingsSnapshot.data!);
+          final double pricePerMinute = appSettings.pricePerMinute;
 
-          final vehicles = snapshot.data!;
+          return StreamBuilder<List<Vehicle>>(
+            stream: FirebaseFirestore.instance
+                .collection('vehicles')
+                .where('status', isEqualTo: 'completed') // Filter for completed vehicles
+                .orderBy('exitTime', descending: true) // Order by exit time
+                .snapshots()
+                .map((snapshot) => snapshot.docs.map((doc) => Vehicle.fromFirestore(doc)).toList()),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Center(child: Text('Ошибка загрузки истории: ${snapshot.error}'));
+              }
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Center(child: Text('История обслуживания пуста'));
+              }
 
-          return ListView.builder(
-            itemCount: vehicles.length,
-            itemBuilder: (context, index) {
-              final vehicle = vehicles[index];
-              // Reuse VehicleListItem, it handles displaying total time for non-active status
-              return VehicleListItem(
-                vehicle: vehicle,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ManagerVehicleDetailScreen(vehicleId: vehicle.id),
-                    ),
+              final vehicles = snapshot.data!;
+
+              return ListView.builder(
+                itemCount: vehicles.length,
+                itemBuilder: (context, index) {
+                  final vehicle = vehicles[index];
+                  // Reuse VehicleListItem, it handles displaying total time for non-active status
+                  return VehicleListItem(
+                    vehicle: vehicle,
+                    pricePerMinute: pricePerMinute, // Pass pricePerMinute
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ManagerVehicleDetailScreen(vehicleId: vehicle.id),
+                        ),
+                      );
+                    },
                   );
                 },
               );

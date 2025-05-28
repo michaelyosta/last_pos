@@ -10,6 +10,7 @@ import 'package:pos_app/models/category.dart'; // Import Category model
 import 'product_selection_screen.dart'; // Import ProductSelectionScreen
 import 'manager_order_confirmation_screen.dart'; // Import order confirmation screen
 import 'package:pos_app/models/app_settings.dart'; // Import AppSettings model
+import 'package:pos_app/screens/payment_qr_screen.dart'; // Import PaymentQrScreen
 
 class ManagerVehicleDetailScreen extends StatefulWidget { // Converted to StatefulWidget
   final String vehicleId;
@@ -84,7 +85,35 @@ class _ManagerVehicleDetailScreenState extends State<ManagerVehicleDetailScreen>
                           const SizedBox(height: 8.0),
                           // Display timer for active vehicles, or total time for completed
                           vehicle.status == 'active'
-                              ? TimerWidget(entryTime: vehicle.entryTime)
+                              ? Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    TimerWidget(entryTime: vehicle.entryTime),
+                                    const SizedBox(width: 16.0),
+                                    StreamBuilder<DocumentSnapshot>(
+                                      stream: FirebaseFirestore.instance
+                                          .collection('serverTime')
+                                          .doc('current') // Assuming a document to get server time
+                                          .snapshots(),
+                                      builder: (context, serverTimeSnapshot) {
+                                        if (!serverTimeSnapshot.hasData) {
+                                          return const Text('ИТОГО: Calculating...');
+                                        }
+                                        // Use current local time for calculation if server time is not readily available or for more responsive UI
+                                        DateTime now = DateTime.now();
+                                        DateTime entryDateTime = vehicle.entryTime.toDate();
+                                        Duration difference = now.difference(entryDateTime);
+                                        int totalMinutes = difference.inMinutes;
+                                        double timeBasedCost = totalMinutes * pricePerMinute;
+
+                                        return Text(
+                                          'ИТОГО: ${timeBasedCost.toStringAsFixed(2)} тнг',
+                                          style: Theme.of(context).textTheme.titleMedium,
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                )
                               : Text('Время обслуживания: ${(vehicle.totalTime / 60).floor()}h ${vehicle.totalTime % 60}m'),
                         ],
                       ),
@@ -188,9 +217,26 @@ class _ManagerVehicleDetailScreenState extends State<ManagerVehicleDetailScreen>
                             'Стоимость за время (${pricePerMinute} тнг/мин):',
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
-                          Text(
-                            '${(vehicle.totalTime * pricePerMinute).toStringAsFixed(2)} тнг',
-                            style: Theme.of(context).textTheme.titleMedium,
+                          StreamBuilder<DocumentSnapshot>(
+                            stream: FirebaseFirestore.instance
+                                .collection('serverTime')
+                                .doc('current') // Assuming a document to get server time
+                                .snapshots(),
+                            builder: (context, serverTimeSnapshot) {
+                              if (!serverTimeSnapshot.hasData) {
+                                return const Text('Calculating...');
+                              }
+                              DateTime now = DateTime.now();
+                              DateTime entryDateTime = vehicle.entryTime.toDate();
+                              Duration difference = now.difference(entryDateTime);
+                              int totalMinutes = difference.inMinutes;
+                              double timeBasedCost = totalMinutes * pricePerMinute;
+
+                              return Text(
+                                '${timeBasedCost.toStringAsFixed(2)} тнг',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              );
+                            },
                           ),
                         ],
                       ),
@@ -216,42 +262,57 @@ class _ManagerVehicleDetailScreenState extends State<ManagerVehicleDetailScreen>
                     // "ЗАВЕРШИТЬ" button
                     ElevatedButton(
                       onPressed: () async {
-                        // Logic to complete the service
                         try {
-                          // Get current server time
-                          DateTime serverTime = await FirebaseFirestore.instance.collection('serverTime').add({'timestamp': FieldValue.serverTimestamp()}).then((ref) => ref.get()).then((snapshot) => snapshot.get('timestamp').toDate());
-
-                          // Calculate total time in minutes
-                          int totalMinutes = serverTime.difference(vehicle.entryTime.toDate()).inMinutes;
-
-                          // Calculate time-based cost
+                          // Calculate final total amount including time-based cost
+                          DateTime now = DateTime.now();
+                          Duration difference = now.difference(vehicle.entryTime.toDate());
+                          int totalMinutes = difference.inMinutes;
                           double timeBasedCost = totalMinutes * pricePerMinute;
+                          double finalTotalAmount = vehicle.totalAmount + timeBasedCost;
 
-                          // Calculate new total amount
-                          double newTotalAmount = vehicle.totalAmount + timeBasedCost;
-
-                          // Update vehicle status to 'completed' and set exit time, total time, time-based cost, and new total amount
-                          await FirebaseFirestore.instance.collection('vehicles').doc(vehicle.id).update({
-                            'status': 'completed', // Directly set to completed
-                            'paymentStatus': 'completed', // Directly set payment status to completed
-                            'exitTime': Timestamp.fromDate(serverTime),
-                            'totalTime': totalMinutes,
-                            'timeBasedCost': timeBasedCost, // Save time-based cost
-                            'totalAmount': newTotalAmount, // Update total amount
-                          });
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Обслуживание завершено')),
+                          // Show payment method selection dialog
+                          String? paymentMethod = await showDialog<String>(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: const Text('Выберите способ оплаты'),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: <Widget>[
+                                    ListTile(
+                                      leading: const Icon(Icons.qr_code),
+                                      title: const Text('Оплата QR'),
+                                      onTap: () {
+                                        Navigator.pop(context, 'qr');
+                                      },
+                                    ),
+                                    ListTile(
+                                      leading: const Icon(Icons.money),
+                                      title: const Text('Оплата Наличными'),
+                                      onTap: () {
+                                        Navigator.pop(context, 'cash');
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
                           );
 
-                          // Navigate back to the vehicles list screen
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ManagerVehiclesListScreen(),
-                            ),
-                          );
-
+                          if (paymentMethod != null) {
+                            // Navigate to PaymentQrScreen regardless of method
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => PaymentQrScreen(
+                                  vehicleId: vehicle.id,
+                                  totalAmount: finalTotalAmount,
+                                  qrImagePath: 'qr_code/photo_2025-05-27_18-33-18.jpg',
+                                  paymentMethod: paymentMethod, // Pass selected method
+                                ),
+                              ),
+                            );
+                          }
                         } catch (e) {
                           print('Error completing service: $e');
                           ScaffoldMessenger.of(context).showSnackBar(
