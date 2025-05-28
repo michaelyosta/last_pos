@@ -96,7 +96,7 @@ class _ManagerHistoryScreenState extends State<ManagerHistoryScreen> { // Create
           if (index == 0) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const ManagerVehiclesListScreen()),
+              MaterialPageRoute(builder: (context) => ManagerVehiclesListScreen(managerId: widget.managerId)),
             );
           } else if (index == 1) {
             Navigator.pushReplacement(

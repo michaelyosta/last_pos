@@ -10,9 +10,15 @@ import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
 import 'login_screen.dart'; // Import LoginScreen
 import 'package:pos_app/models/app_settings.dart'; // Import AppSettings model
 
-class ManagerVehiclesListScreen extends StatelessWidget {
-  const ManagerVehiclesListScreen({Key? key}) : super(key: key);
+class ManagerVehiclesListScreen extends StatefulWidget { // Changed to StatefulWidget
+  final String managerId;
+  const ManagerVehiclesListScreen({Key? key, required this.managerId}) : super(key: key);
 
+  @override
+  _ManagerVehiclesListScreenState createState() => _ManagerVehiclesListScreenState();
+}
+
+class _ManagerVehiclesListScreenState extends State<ManagerVehiclesListScreen> { // Created State class
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -80,7 +86,10 @@ class ManagerVehiclesListScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => ManagerVehicleDetailScreen(vehicleId: vehicle.id),
+                          builder: (context) => ManagerVehicleDetailScreen(
+                            vehicleId: vehicle.id,
+                            managerId: widget.managerId, // Pass managerId
+                          ),
                         ),
                       );
                     },
@@ -104,7 +113,7 @@ class ManagerVehiclesListScreen extends StatelessWidget {
           } else if (index == 2) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const ManagerHistoryScreen()),
+              MaterialPageRoute(builder: (context) => ManagerHistoryScreen(managerId: widget.managerId)), // Pass managerId
             );
           }
         },

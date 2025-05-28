@@ -203,7 +203,7 @@ class _LoginScreenState extends State<LoginScreen> {
             }
         }
       } else {
-        if (context.mounted) { // Added context.mounted check
+        if (context.mounted) { 
             ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Менеджер с таким ID не найден')),
             );
@@ -211,21 +211,11 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       print('Manager login error: $e');
-      if (context.mounted) { // Added context.mounted check
+      if (context.mounted) { 
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Произошла ошибка при входе менеджера: $e')),
         );
       }
-    }
-  }
-          const SnackBar(content: Text('Менеджер с таким ID не найден')),
-        );
-      }
-    } catch (e) {
-      print('Manager login error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Произошла ошибка при входе менеджера: $e')),
-      );
     }
   }
 
