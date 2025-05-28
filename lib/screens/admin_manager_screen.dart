@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'admin_view_manager_report_screen.dart'; // Import the new screen
+import 'admin_create_manager_screen.dart'; // Import create manager screen
 
-class AdminManagerReportsScreen extends StatefulWidget {
-  static const String routeName = '/admin/manager-reports';
+class AdminManagerScreen extends StatefulWidget {
+  static const String routeName = '/admin/manager';
   final FirebaseFirestore? firestoreInstanceForTest;
 
-  const AdminManagerReportsScreen({super.key, this.firestoreInstanceForTest});
+  const AdminManagerScreen({super.key, this.firestoreInstanceForTest});
 
   @override
-  State<AdminManagerReportsScreen> createState() => _AdminManagerReportsScreenState();
+  State<AdminManagerScreen> createState() => _AdminManagerScreenState();
 }
 
-class _AdminManagerReportsScreenState extends State<AdminManagerReportsScreen> {
+class _AdminManagerScreenState extends State<AdminManagerScreen> {
   late FirebaseFirestore _firestore;
   late Future<QuerySnapshot<Map<String, dynamic>>> _managersFuture;
 
@@ -30,7 +31,7 @@ class _AdminManagerReportsScreenState extends State<AdminManagerReportsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Отчеты по Менеджерам'),
+        title: const Text('Управление Менеджерами'), // Updated title
       ),
       body: FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
         future: _managersFuture,
@@ -81,6 +82,16 @@ class _AdminManagerReportsScreenState extends State<AdminManagerReportsScreen> {
             },
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AdminCreateManagerScreen()),
+          );
+        },
+        tooltip: 'Создать Менеджера',
+        child: const Icon(Icons.add),
       ),
     );
   }
