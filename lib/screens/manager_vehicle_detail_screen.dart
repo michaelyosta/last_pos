@@ -277,7 +277,7 @@ class _ManagerVehicleDetailScreenState extends State<ManagerVehicleDetailScreen>
                               return AlertDialog(
                                 title: const Text('Выберите способ оплаты'),
                                 content: Column(
-                                  mainAxisSize: MainAxisSize.AxisSize.min,
+                                  mainAxisSize: MainAxisSize.min,
                                   children: <Widget>[
                                     ListTile(
                                       leading: const Icon(Icons.qr_code),

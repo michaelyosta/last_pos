@@ -94,9 +94,8 @@ class PaymentQrScreen extends StatelessWidget {
       }
     }
   }
-        const SnackBar(content: Text('Оплата завершена, заказ выполнен')),
-      );
 
+  // Removed extraneous SnackBar definition that was here
 
   @override
   Widget build(BuildContext context) {
