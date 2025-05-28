@@ -17,17 +17,59 @@ class ManagerHistoryScreen extends StatefulWidget { // Changed to StatefulWidget
   _ManagerHistoryScreenState createState() => _ManagerHistoryScreenState();
 }
 
-class _ManagerHistoryScreenState extends State<ManagerHistoryScreen> { // Created State class
+class _ManagerHistoryScreenState extends State<ManagerHistoryScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = "";
+  bool _isSearching = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Widget _buildAppBarTitle() {
+    if (_isSearching) {
+      return TextField(
+        controller: _searchController,
+        autofocus: true,
+        decoration: const InputDecoration(
+          hintText: 'Поиск по гос. номеру...',
+          border: InputBorder.none,
+          hintStyle: TextStyle(color: Colors.white70),
+        ),
+        style: const TextStyle(color: Colors.white, fontSize: 16.0),
+      );
+    } else {
+      return const Text('История Обслуживания');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('История Обслуживания'),
+        title: _buildAppBarTitle(),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
+            icon: Icon(_isSearching ? Icons.close : Icons.search),
             onPressed: () {
-              // TODO: Implement search functionality
+              setState(() {
+                _isSearching = !_isSearching;
+                if (!_isSearching) {
+                  _searchController.clear(); // Also clears _searchQuery via listener
+                }
+              });
             },
           ),
         ],
@@ -62,7 +104,17 @@ class _ManagerHistoryScreenState extends State<ManagerHistoryScreen> { // Create
                 return const Center(child: Text('История обслуживания пуста'));
               }
 
-              final vehicles = snapshot.data!;
+              List<Vehicle> vehicles = snapshot.data!;
+
+              if (_searchQuery.isNotEmpty) {
+                vehicles = vehicles.where((vehicle) {
+                  return vehicle.licensePlate.toLowerCase().contains(_searchQuery.toLowerCase().trim());
+                }).toList();
+              }
+              if (vehicles.isEmpty && _searchQuery.isNotEmpty) {
+                return const Center(child: Text('Машины с таким номером не найдены.'));
+              }
+
 
               return ListView.builder(
                 itemCount: vehicles.length,

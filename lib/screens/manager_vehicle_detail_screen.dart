@@ -156,7 +156,6 @@ class _ManagerVehicleDetailScreenState extends State<ManagerVehicleDetailScreen>
                           itemCount: categories.length,
                           itemBuilder: (context, index) {
                             final category = categories[index];
-                            // TODO: Implement expandable section for each category to show products
                             return ListTile(
                               title: Text(category.displayName),
                               onTap: () {
@@ -256,9 +255,30 @@ class _ManagerVehicleDetailScreenState extends State<ManagerVehicleDetailScreen>
                             'ИТОГО:',
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
-                          Text(
-                            '${(vehicle.totalAmount + (vehicle.totalTime * pricePerMinute)).toStringAsFixed(2)} тнг',
-                            style: Theme.of(context).textTheme.titleLarge,
+                          StreamBuilder<Object>( // Using StreamBuilder to update total for active vehicles
+                            stream: vehicle.status == 'active' 
+                                  ? Stream.periodic(const Duration(seconds: 1), (int i) => i) 
+                                  : Stream.value(null), // For non-active, a single value stream
+                            builder: (context, timerSnapshot) {
+                              if (vehicle.status == 'active') {
+                                DateTime now = DateTime.now();
+                                DateTime entryDateTime = vehicle.entryTime.toDate();
+                                Duration difference = now.difference(entryDateTime);
+                                int totalMinutes = difference.inMinutes;
+                                double liveTimeBasedCost = totalMinutes * pricePerMinute;
+                                double displayTotal = vehicle.totalAmount + liveTimeBasedCost;
+                                return Text(
+                                  '${displayTotal.toStringAsFixed(2)} тнг',
+                                  style: Theme.of(context).textTheme.titleLarge,
+                                );
+                              } else {
+                                // For 'completed' or other non-active statuses, vehicle.totalAmount is the grand total
+                                return Text(
+                                  '${vehicle.totalAmount.toStringAsFixed(2)} тнг',
+                                  style: Theme.of(context).textTheme.titleLarge,
+                                );
+                              }
+                            }
                           ),
                         ],
                       ),

@@ -67,7 +67,7 @@ class _AdminCreateManagerScreenState extends State<AdminCreateManagerScreen> {
         return;
       }
 
-      final String managerEmail = 'manager_$managerNumber@example.com';
+      final String managerEmail = 'manager_$managerNumber@yourposapp.local';
 
       // Create user in Firebase Authentication
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
