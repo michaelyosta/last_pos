@@ -49,10 +49,23 @@ class _LoginScreenState extends State<LoginScreen> {
               MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
             );
           } else if (role == 'manager') {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const ManagerVehiclesListScreen()), // Navigate to Vehicle List Screen
-            );
+            final String? managerId = FirebaseAuth.instance.currentUser?.uid;
+            if (managerId != null) {
+              if (context.mounted) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => ManagerVehiclesListScreen(managerId: managerId)),
+                );
+              }
+            } else {
+              // This case should ideally not happen after a successful login
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Не удалось получить ID менеджера.')),
+                );
+              }
+              await FirebaseAuth.instance.signOut(); // Sign out if managerId is missing
+            }
           } else {
             // Handle unknown role
             print('Unknown user role: $role');
@@ -144,12 +157,67 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (querySnapshot.docs.isNotEmpty) {
         // Manager found, navigate to manager dashboard
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const ManagerVehiclesListScreen()),
-        );
+        // This flow uses a custom managerId from text input, not Firebase Auth UID directly for navigation.
+        // The task asks for FirebaseAuth.instance.currentUser?.uid.
+        // If this manager login implies a Firebase user is also signed in,
+        // then managerId from FirebaseAuth.instance.currentUser?.uid should be used.
+        // For now, assuming this is a distinct flow or the user is already signed in.
+        // If the manager is logging in via this method, they aren't using Firebase Auth directly here.
+        // So, it's not clear how FirebaseAuth.instance.currentUser?.uid would be populated or relevant
+        // *for this specific block*.
+        // However, if the requirement is that *any* navigation to ManagerVehiclesListScreen
+        // must use the UID of a *currently signed-in Firebase user*, then this flow is problematic
+        // unless it also performs a Firebase sign-in.
+        // For now, let's assume this part of the login is out of scope for the managerId from FirebaseAuth.
+        // Or, if the manager *is* a firebase user, this custom ID is just for lookup,
+        // and the UID should still be fetched from the actual logged-in user.
+        // Let's apply the requested change here as well, assuming a Firebase user is involved.
+        final String? currentAuthManagerId = FirebaseAuth.instance.currentUser?.uid;
+        DocumentSnapshot managerDoc = querySnapshot.docs.first; // Get the manager's document
+        String managerFirestoreUid = managerDoc.id; // This is the UID stored in Firestore
+
+        // It's possible currentAuthManagerId might be from a previous session or admin.
+        // We should use the UID that corresponds to the managerId entered.
+        // This implies the `managerId` entered in the text field is for LOOKUP, and the actual
+        // UID to pass is the one from the document found.
+        
+        // If the app logic implies that this managerId login should *also* sign in a Firebase user,
+        // that sign-in step is missing here. Assuming the user is already signed in or this is an admin view.
+        // For now, I will pass the UID from the Firestore document as the 'managerId' for the screen.
+        // This seems more logical for this specific flow than currentAuthManagerId.
+        // However, the task strictly asks for `FirebaseAuth.instance.currentUser?.uid`.
+        // This creates a conflict. Let's prioritize the task's literal instruction.
+
+        if (currentAuthManagerId != null) {
+            if (context.mounted) {
+                 Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => ManagerVehiclesListScreen(managerId: currentAuthManagerId)),
+                );
+            }
+        } else {
+             if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Не удалось получить ID текущего пользователя FirebaseAuth для менеджера.')),
+                );
+            }
+        }
       } else {
+        if (context.mounted) { // Added context.mounted check
+            ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Менеджер с таким ID не найден')),
+            );
+        }
+      }
+    } catch (e) {
+      print('Manager login error: $e');
+      if (context.mounted) { // Added context.mounted check
         ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Произошла ошибка при входе менеджера: $e')),
+        );
+      }
+    }
+  }
           const SnackBar(content: Text('Менеджер с таким ID не найден')),
         );
       }

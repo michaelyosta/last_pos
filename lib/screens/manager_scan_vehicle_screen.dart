@@ -159,10 +159,17 @@ class _ManagerScanVehicleScreenState extends State<ManagerScanVehicleScreen> {
         'adminId': null,
       });
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const ManagerVehiclesListScreen()),
-      );
+      final String? currentManagerId = FirebaseAuth.instance.currentUser?.uid;
+      if (currentManagerId != null && context.mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => ManagerVehiclesListScreen(managerId: currentManagerId)),
+        );
+      } else if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Не удалось получить ID менеджера для навигации.')),
+        );
+      }
     } catch (e) {
       print('Error creating vehicle entry: $e');
       if (mounted) {
@@ -253,10 +260,26 @@ class _ManagerScanVehicleScreenState extends State<ManagerScanVehicleScreen> {
       bottomNavigationBar: ManagerBottomNavigationBar(
         currentIndex: 1,
         onTap: (index) {
+          final String? currentManagerId = FirebaseAuth.instance.currentUser?.uid;
+          if (currentManagerId == null) {
+            if (mounted) { // Ensure 'mounted' is accessible or use 'context.mounted' if in a builder
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Не удалось получить ID менеджера для навигации.')),
+              );
+            }
+            return;
+          }
+
           if (index == 0) {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ManagerVehiclesListScreen()));
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => ManagerVehiclesListScreen(managerId: currentManagerId)),
+            );
           } else if (index == 2) {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ManagerHistoryScreen()));
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => ManagerHistoryScreen(managerId: currentManagerId)),
+            );
           }
         },
       ),

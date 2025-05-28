@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
+import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth
 import 'package:pos_app/models/vehicle.dart'; // Import Vehicle model
 import 'manager_vehicle_detail_screen.dart'; // Import detail screen for cancellation
 import 'manager_vehicles_list_screen.dart'; // Import vehicle list screen for navigation
@@ -24,10 +25,17 @@ class ManagerOrderConfirmationScreen extends StatelessWidget {
       );
 
       // Navigate back to the active vehicles list
-       Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const ManagerVehiclesListScreen()),
-      );
+      final String? managerId = FirebaseAuth.instance.currentUser?.uid;
+      if (managerId != null && context.mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => ManagerVehiclesListScreen(managerId: managerId)),
+        );
+      } else if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Не удалось получить ID менеджера для навигации.')),
+        );
+      }
 
     } catch (e) {
       print('Error confirming order: $e');
@@ -53,10 +61,17 @@ class ManagerOrderConfirmationScreen extends StatelessWidget {
       );
 
       // Navigate back to the vehicle detail screen
-       Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => ManagerVehicleDetailScreen(vehicleId: vehicleId)),
-      );
+      final String? managerId = FirebaseAuth.instance.currentUser?.uid;
+      if (managerId != null && context.mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => ManagerVehicleDetailScreen(vehicleId: vehicleId, managerId: managerId)),
+        );
+      } else if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Не удалось получить ID менеджера для навигации.')),
+        );
+      }
 
     } catch (e) {
       print('Error canceling confirmation: $e');
