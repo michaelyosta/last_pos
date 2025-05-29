@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:pos_app/core/constants.dart'; // Import constants
 
 class Vehicle {
   final String id;
@@ -45,7 +46,7 @@ class Vehicle {
       licensePlate: data['licensePlate'] ?? '',
       photoUrl: data['photoUrl'] ?? '',
       licensePlatePhotoUrl: data['licensePlatePhotoUrl'] ?? '',
-      status: data['status'] ?? 'active',
+      status: data['status'] ?? VehicleStatuses.active, // Use constant
       entryTime: data['entryTime'] ?? Timestamp.now(),
       exitTime: data['exitTime'],
       totalTime: data['totalTime'] ?? 0,
@@ -62,7 +63,7 @@ class Vehicle {
       totalAmount: (data['totalAmount'] ?? 0).toDouble(),
       timeBasedCost: (data['timeBasedCost'] as num?)?.toDouble(), // Parse new field
       paymentMethod: data['paymentMethod'],
-      paymentStatus: data['paymentStatus'] ?? 'pending',
+      paymentStatus: data['paymentStatus'] ?? PaymentStatuses.pending, // Use constant
       adminComment: data['adminComment'],
       adminId: data['adminId'],
     );

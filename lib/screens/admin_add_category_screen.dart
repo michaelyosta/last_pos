@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
 import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth for createdBy
+import 'package:pos_app/core/constants.dart'; // Import constants
 
 class AdminAddCategoryScreen extends StatefulWidget { // Converted to StatefulWidget
   const AdminAddCategoryScreen({Key? key}) : super(key: key);
@@ -21,7 +22,7 @@ class _AdminAddCategoryScreenState extends State<AdminAddCategoryScreen> { // Ad
       try {
         String adminId = FirebaseAuth.instance.currentUser!.uid; // Get current admin ID
 
-        await FirebaseFirestore.instance.collection('categories').add({
+        await FirebaseFirestore.instance.collection(FirestoreCollections.categories).add({
           'name': _nameController.text.trim(),
           'displayName': _displayNameController.text.trim(),
           'description': _descriptionController.text.trim(),

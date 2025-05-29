@@ -7,6 +7,7 @@ import 'manager_vehicles_list_screen.dart'; // Import vehicle list screen
 import 'manager_scan_vehicle_screen.dart'; // Import scan screen
 import 'manager_vehicle_detail_screen.dart'; // Import detail screen
 import 'package:pos_app/models/app_settings.dart'; // Import AppSettings model
+import 'package:pos_app/core/constants.dart'; // Import constants
 
 class ManagerHistoryScreen extends StatefulWidget { // Changed to StatefulWidget to use widget.managerId
   final String managerId;
@@ -75,7 +76,7 @@ class _ManagerHistoryScreenState extends State<ManagerHistoryScreen> {
         ],
       ),
       body: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance.collection('settings').doc('global_settings').snapshots(),
+        stream: FirebaseFirestore.instance.collection(FirestoreCollections.settings).doc(FirestoreDocuments.globalSettings).snapshots(), // Use constants
         builder: (context, settingsSnapshot) {
           if (settingsSnapshot.hasError) {
             return Center(child: Text('Ошибка загрузки настроек: ${settingsSnapshot.error}'));
@@ -88,8 +89,8 @@ class _ManagerHistoryScreenState extends State<ManagerHistoryScreen> {
 
           return StreamBuilder<List<Vehicle>>(
             stream: FirebaseFirestore.instance
-                .collection('vehicles')
-                .where('status', isEqualTo: 'completed') // Filter for completed vehicles
+                .collection(FirestoreCollections.vehicles) // Use constant
+                .where('status', isEqualTo: VehicleStatuses.completed) // Use constant // Filter for completed vehicles
                 .orderBy('exitTime', descending: true) // Order by exit time
                 .snapshots()
                 .map((snapshot) => snapshot.docs.map((doc) => Vehicle.fromFirestore(doc)).toList()),

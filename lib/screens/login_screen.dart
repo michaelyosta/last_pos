@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
 import 'manager_vehicles_list_screen.dart'; // Import ManagerVehiclesListScreen
 import 'admin_dashboard_screen.dart'; // Import placeholder admin screen
+import 'package:pos_app/core/constants.dart'; // Import constants
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -37,18 +38,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
         // Fetch user role from Firestore
         DocumentSnapshot userDoc = await FirebaseFirestore.instance
-            .collection('users')
+            .collection(FirestoreCollections.users) // Use constant
             .doc(userCredential.user!.uid)
             .get();
 
         if (userDoc.exists) {
           String role = userDoc.get('role');
-          if (role == 'admin') {
+          if (role == UserRoles.admin) { // Use constant
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
             );
-          } else if (role == 'manager') {
+          } else if (role == UserRoles.manager) { // Use constant
             final String? managerId = FirebaseAuth.instance.currentUser?.uid;
             if (managerId != null) {
               if (context.mounted) {

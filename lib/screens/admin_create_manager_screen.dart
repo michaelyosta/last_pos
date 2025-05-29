@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math'; // Added for Random
+import 'package:pos_app/core/constants.dart'; // Import constants
 
 class AdminCreateManagerScreen extends StatefulWidget {
   static const String routeName = '/admin/create-manager';
@@ -67,6 +68,23 @@ class _AdminCreateManagerScreenState extends State<AdminCreateManagerScreen> {
         return;
       }
 
+      // Check if managerNumber is already in use in Firestore
+      final existingUserQuery = await _firestore
+          .collection(FirestoreCollections.users) // Use constant
+          .where('managerNumber', isEqualTo: managerNumber)
+          .limit(1)
+          .get();
+
+      if (existingUserQuery.docs.isNotEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Этот номер менеджера уже используется. Пожалуйста, сгенерируйте другой номер.')),
+          );
+        }
+        setState(() => _isLoading = false);
+        return; // Abort creation
+      }
+
       final String managerEmail = 'manager_$managerNumber@yourposapp.local';
 
       // Create user in Firebase Authentication
@@ -76,11 +94,11 @@ class _AdminCreateManagerScreenState extends State<AdminCreateManagerScreen> {
       );
 
       // Store manager details in Firestore
-      await _firestore.collection('users').doc(userCredential.user!.uid).set({
+      await _firestore.collection(FirestoreCollections.users).doc(userCredential.user!.uid).set({ // Use constant
         'name': _nameController.text.trim(),
         'managerNumber': managerNumber, // Store manager number
         'email': managerEmail, // Store generated email
-        'role': 'manager',
+        'role': UserRoles.manager, // Use constant
         'createdAt': Timestamp.now(),
       });
 

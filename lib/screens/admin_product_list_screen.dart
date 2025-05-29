@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
 import 'package:pos_app/models/product.dart'; // Import Product model
 import 'admin_add_product_screen.dart'; // Import add product screen
 import 'admin_edit_product_screen.dart'; // Import edit product screen
+import 'package:pos_app/core/constants.dart'; // Import constants
 
 class AdminProductListScreen extends StatelessWidget {
   final String categoryId;
@@ -13,7 +14,7 @@ class AdminProductListScreen extends StatelessWidget {
   // Function to delete a product
   Future<void> _deleteProduct(BuildContext context, String productId) async {
     try {
-      await FirebaseFirestore.instance.collection('products').doc(productId).delete();
+      await FirebaseFirestore.instance.collection(FirestoreCollections.products).doc(productId).delete(); // Use constant
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Товар удален')),
       );
@@ -46,7 +47,7 @@ class AdminProductListScreen extends StatelessWidget {
       ),
       body: StreamBuilder<List<Product>>(
         stream: FirebaseFirestore.instance
-            .collection('products')
+            .collection(FirestoreCollections.products) // Use constant
             .where('categoryId', isEqualTo: categoryId) // Filter products by category
             .orderBy('name') // Order products alphabetically
             .snapshots()
