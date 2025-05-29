@@ -18,17 +18,59 @@ class ManagerVehiclesListScreen extends StatefulWidget { // Changed to StatefulW
   _ManagerVehiclesListScreenState createState() => _ManagerVehiclesListScreenState();
 }
 
-class _ManagerVehiclesListScreenState extends State<ManagerVehiclesListScreen> { // Created State class
+class _ManagerVehiclesListScreenState extends State<ManagerVehiclesListScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = "";
+  bool _isSearching = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Widget _buildAppBarTitle() {
+    if (_isSearching) {
+      return TextField(
+        controller: _searchController,
+        autofocus: true,
+        decoration: const InputDecoration(
+          hintText: 'Поиск по гос. номеру...',
+          border: InputBorder.none,
+          hintStyle: TextStyle(color: Colors.white70),
+        ),
+        style: const TextStyle(color: Colors.white, fontSize: 16.0),
+      );
+    } else {
+      return const Text('Активные Машины');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Активные Машины'),
+        title: _buildAppBarTitle(),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
+            icon: Icon(_isSearching ? Icons.close : Icons.search),
             onPressed: () {
-              // TODO: Implement search functionality
+              setState(() {
+                _isSearching = !_isSearching;
+                if (!_isSearching) {
+                  _searchController.clear(); // Also clears _searchQuery via listener
+                }
+              });
             },
           ),
           IconButton(
@@ -73,7 +115,21 @@ class _ManagerVehiclesListScreenState extends State<ManagerVehiclesListScreen> {
                 return const Center(child: Text('Нет активных машин'));
               }
 
-              final vehicles = snapshot.data!;
+              List<Vehicle> vehicles = snapshot.data!;
+
+              if (_searchQuery.isNotEmpty) {
+                vehicles = vehicles.where((vehicle) {
+                  return vehicle.licensePlate.toLowerCase().contains(_searchQuery.toLowerCase().trim());
+                }).toList();
+              }
+
+              if (vehicles.isEmpty && _searchQuery.isNotEmpty) {
+                return const Center(child: Text('Машины с таким номером не найдены.'));
+              }
+               if (vehicles.isEmpty && _searchQuery.isEmpty && (snapshot.data?.isEmpty ?? true) ) {
+                 return const Center(child: Text('Нет активных машин'));
+               }
+
 
               return ListView.builder(
                 itemCount: vehicles.length,

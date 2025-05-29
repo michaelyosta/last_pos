@@ -125,6 +125,7 @@ class PaymentQrScreen extends StatelessWidget {
             Expanded(
               child: Center(
                 // Display QR code image
+                // TODO: Implement dynamic QR code generation. Currently uses a static asset.
                 child: Image.asset(
                   qrImagePath,
                   fit: BoxFit.contain,

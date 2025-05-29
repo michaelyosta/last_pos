@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Added import
 import 'admin_create_manager_screen.dart'; // Import create manager screen
 import 'admin_manager_screen.dart'; // Import manager reports screen
 import 'admin_products_screen.dart'; // Placeholder for products screen
@@ -17,12 +18,15 @@ class AdminDashboardScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () {
+            onPressed: () async { // Made callback async
               // TODO: Implement logout logic
-               Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-              );
+              await FirebaseAuth.instance.signOut(); // Added sign out call
+              if (Navigator.of(context).mounted) { // Check if widget is mounted
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                );
+              }
             },
           ),
         ],
