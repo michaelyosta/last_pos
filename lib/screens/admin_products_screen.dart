@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
 import 'package:pos_app/models/category.dart'; // Import Category model
 import 'admin_product_list_screen.dart'; // Import product list screen
 import 'admin_add_category_screen.dart'; // Import add category screen
+import 'package:pos_app/core/constants.dart'; // Import constants
 
 class AdminProductsScreen extends StatefulWidget {
   const AdminProductsScreen({Key? key}) : super(key: key);
@@ -20,7 +21,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Подтвердить удаление'),
-          content: Text('Вы уверены, что хотите удалить категорию "$categoryName"? Все товары в этой категории останутся без категории.'),
+          content: Text('Вы уверены, что хотите удалить категорию "$categoryName"? Товары в этой категории не будут удалены, но останутся без категории и могут потребовать ручного переназначения в будущем.'),
           actions: <Widget>[
             TextButton(
               child: const Text('Отмена'),
@@ -41,7 +42,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
 
     if (confirmDelete == true) {
       try {
-        await FirebaseFirestore.instance.collection('categories').doc(categoryId).delete();
+        await FirebaseFirestore.instance.collection(FirestoreCollections.categories).doc(categoryId).delete(); // Use constant
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Категория успешно удалена')),
         );
@@ -77,7 +78,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
           Expanded(
             child: StreamBuilder<List<Category>>(
               stream: FirebaseFirestore.instance
-                  .collection('categories')
+                  .collection(FirestoreCollections.categories) // Use constant
                   .orderBy('displayName') // Order categories alphabetically
                   .snapshots()
                   .map((snapshot) => snapshot.docs.map((doc) => Category.fromFirestore(doc)).toList()),

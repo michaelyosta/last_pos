@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'admin_view_manager_report_screen.dart'; // Import the new screen
 import 'admin_create_manager_screen.dart'; // Import create manager screen
+import 'package:pos_app/core/constants.dart'; // Import constants
 
 class AdminManagerScreen extends StatefulWidget {
   static const String routeName = '/admin/manager';
@@ -22,8 +23,8 @@ class _AdminManagerScreenState extends State<AdminManagerScreen> {
     super.initState();
     _firestore = widget.firestoreInstanceForTest ?? FirebaseFirestore.instance;
     _managersFuture = _firestore
-        .collection('users')
-        .where('role', isEqualTo: 'manager')
+        .collection(FirestoreCollections.users) // Use constant
+        .where('role', isEqualTo: UserRoles.manager) // Use constant
         .get();
   }
 

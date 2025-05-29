@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth
 import 'package:pos_app/models/vehicle.dart'; // Import Vehicle model
 import 'manager_vehicle_detail_screen.dart'; // Import detail screen for cancellation
 import 'manager_vehicles_list_screen.dart'; // Import vehicle list screen for navigation
+import 'package:pos_app/core/constants.dart'; // Import constants
 
 class ManagerOrderConfirmationScreen extends StatelessWidget {
   final String vehicleId;
@@ -16,8 +17,8 @@ class ManagerOrderConfirmationScreen extends StatelessWidget {
       // Update vehicle status to 'pending' (already done in detail screen, but good to be explicit)
       // This step might involve sending a notification to the admin
       // For now, we just navigate back to the list or show a success message
-      await FirebaseFirestore.instance.collection('vehicles').doc(vehicleId).update({
-         'paymentStatus': 'pending_admin_review', // More specific status
+      await FirebaseFirestore.instance.collection(FirestoreCollections.vehicles).doc(vehicleId).update({ // Use constant
+         'paymentStatus': PaymentStatuses.pendingAdminReview, // Use constant // More specific status
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -49,11 +50,11 @@ class ManagerOrderConfirmationScreen extends StatelessWidget {
   Future<void> _cancelConfirmation(BuildContext context) async {
      try {
       // Revert vehicle status back to 'active'
-      await FirebaseFirestore.instance.collection('vehicles').doc(vehicleId).update({
-         'status': 'active',
+      await FirebaseFirestore.instance.collection(FirestoreCollections.vehicles).doc(vehicleId).update({ // Use constant
+         'status': VehicleStatuses.active, // Use constant
          'exitTime': null, // Clear exit time
          'totalTime': 0, // Reset total time
-         'paymentStatus': 'pending', // Reset payment status
+         'paymentStatus': PaymentStatuses.pending, // Use constant // Reset payment status
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -90,7 +91,7 @@ class ManagerOrderConfirmationScreen extends StatelessWidget {
       ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
-            .collection('vehicles')
+            .collection(FirestoreCollections.vehicles) // Use constant
             .doc(vehicleId)
             .snapshots(),
         builder: (context, snapshot) {

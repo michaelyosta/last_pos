@@ -9,6 +9,7 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:pos_app/core/constants.dart'; // Import constants
 
 class ManagerScanVehicleScreen extends StatefulWidget {
   const ManagerScanVehicleScreen({Key? key}) : super(key: key);
@@ -142,11 +143,11 @@ class _ManagerScanVehicleScreenState extends State<ManagerScanVehicleScreen> {
         licensePlatePhotoUrl = await _uploadPhoto(licensePlatePhoto, 'license_plate_photos');
       }
 
-      await FirebaseFirestore.instance.collection('vehicles').add({
+      await FirebaseFirestore.instance.collection(FirestoreCollections.vehicles).add({ // Use constant
         'licensePlate': licensePlate,
         'photoUrl': carPhotoUrl,
         'licensePlatePhotoUrl': licensePlatePhotoUrl,
-        'status': 'active',
+        'status': VehicleStatuses.active, // Use constant
         'entryTime': FieldValue.serverTimestamp(),
         'exitTime': null,
         'totalTime': 0,
@@ -154,7 +155,7 @@ class _ManagerScanVehicleScreenState extends State<ManagerScanVehicleScreen> {
         'items': [],
         'totalAmount': 0,
         'paymentMethod': null,
-        'paymentStatus': 'pending',
+        'paymentStatus': PaymentStatuses.pending, // Use constant
         'adminComment': null,
         'adminId': null,
       });
@@ -213,6 +214,12 @@ class _ManagerScanVehicleScreenState extends State<ManagerScanVehicleScreen> {
             onPressed: () {
               setState(() {
                 _useCamera = !_useCamera;
+                if (_useCamera) {
+                  // If switching to camera mode, ensure camera is initialized
+                  if (_controller == null || !_controller!.value.isInitialized) {
+                    _initializeCamera();
+                  }
+                }
                 _carPhoto = null; // Reset photos when switching mode
                 _licensePlatePhoto = null;
                 _isTakingCarPhoto = true;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:pos_app/models/category.dart'; // Assuming Category model exists
+import 'package:pos_app/core/constants.dart'; // Import constants
 // import 'package:intl/intl.dart'; // Optional: for advanced date formatting
 
 class AdminViewManagerReportScreen extends StatefulWidget {
@@ -43,7 +44,7 @@ class _AdminViewManagerReportScreenState extends State<AdminViewManagerReportScr
     if (_categoriesLoaded) return;
 
     try {
-      final snapshot = await _firestore.collection('categories').get();
+      final snapshot = await _firestore.collection(FirestoreCollections.categories).get(); // Use constant
       _allCategories = snapshot.docs.map((doc) => Category.fromFirestore(doc)).toList();
       _categoryNames = {for (var cat in _allCategories) cat.id: cat.displayName};
       setState(() {
@@ -94,19 +95,80 @@ class _AdminViewManagerReportScreenState extends State<AdminViewManagerReportScr
     }
   }
 
+  Future<QuerySnapshot<Map<String, dynamic>>> _fetchVehicleDataForReport(DateTime startDate, DateTime adjustedEndDate) async {
+    return _firestore
+        .collection(FirestoreCollections.vehicles)
+        .where('managerId', isEqualTo: widget.managerId)
+        .where('status', isEqualTo: VehicleStatuses.completed)
+        .where('orderCompletionTimestamp', isGreaterThanOrEqualTo: startDate)
+        .where('orderCompletionTimestamp', isLessThanOrEqualTo: adjustedEndDate)
+        .get();
+  }
+
+  Map<String, dynamic> _processReportData(QuerySnapshot<Map<String, dynamic>> vehicleSnapshot) {
+    if (vehicleSnapshot.docs.isEmpty) {
+      return {'isEmpty': true};
+    }
+
+    double totalSalesAmount = 0;
+    int numberOfOrders = vehicleSnapshot.docs.length;
+    Map<String, Map<String, dynamic>> productAggregates = {};
+    double totalTimeBasedRevenue = 0;
+    Map<String, double> revenueByCategory = {};
+
+    for (var doc in vehicleSnapshot.docs) {
+      Map<String, dynamic> vehicleData = doc.data() as Map<String, dynamic>;
+      totalSalesAmount += (vehicleData['totalAmount'] ?? 0.0).toDouble();
+      totalTimeBasedRevenue += (vehicleData['timeBasedCost'] ?? 0.0).toDouble();
+
+      List<dynamic> items = vehicleData['items'] ?? [];
+      for (var item in items) {
+        String productName = item['productName'] ?? 'Неизвестный товар';
+        String categoryId = item['categoryId'] ?? 'unknown_category';
+        int quantity = (item['quantity'] ?? 0).toInt();
+        double price = (item['price'] ?? 0.0).toDouble();
+        double revenueForItem = quantity * price;
+
+        if (productAggregates.containsKey(productName)) {
+          productAggregates[productName]!['totalQuantitySold'] += quantity;
+          productAggregates[productName]!['totalRevenueFromProduct'] += revenueForItem;
+        } else {
+          productAggregates[productName] = {
+            'productName': productName,
+            'totalQuantitySold': quantity,
+            'totalRevenueFromProduct': revenueForItem,
+          };
+        }
+        revenueByCategory[categoryId] = (revenueByCategory[categoryId] ?? 0) + revenueForItem;
+      }
+    }
+
+    List<Map<String, dynamic>> detailedBreakdown = productAggregates.values.toList();
+
+    return {
+      'totalSalesAmount': totalSalesAmount,
+      'numberOfOrders': numberOfOrders,
+      'detailedBreakdown': detailedBreakdown,
+      'timeBasedRevenue': totalTimeBasedRevenue,
+      'categoryRevenueBreakdown': revenueByCategory,
+      'isEmpty': false,
+    };
+  }
+
   Future<void> _generateReport() async {
     if (_startDate == null || _endDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Пожалуйста, выберите начальную и конечную даты.')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Пожалуйста, выберите начальную и конечную даты.')),
+        );
+      }
       return;
     }
 
-    // Ensure categories are loaded before generating the report
     if (!_categoriesLoaded && _categoryLoadingError == null) {
       await _loadCategoriesIfNeeded();
-      if (!_categoriesLoaded) { // If still not loaded (e.g., due to error during the call)
-         if (mounted) {
+      if (!_categoriesLoaded) {
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(_categoryLoadingError ?? 'Категории не загружены. Попробуйте еще раз.')),
           );
@@ -114,12 +176,12 @@ class _AdminViewManagerReportScreenState extends State<AdminViewManagerReportScr
         return;
       }
     } else if (_categoryLoadingError != null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(_categoryLoadingError!)),
-          );
-        }
-        return;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_categoryLoadingError!)),
+        );
+      }
+      return;
     }
 
     setState(() {
@@ -128,81 +190,21 @@ class _AdminViewManagerReportScreenState extends State<AdminViewManagerReportScr
     });
 
     try {
-      // Adjust endDate to include the whole day
       DateTime adjustedEndDate = DateTime(_endDate!.year, _endDate!.month, _endDate!.day, 23, 59, 59);
-
-      QuerySnapshot vehicleSnapshot = await _firestore
-          .collection('vehicles')
-          .where('managerId', isEqualTo: widget.managerId)
-          .where('status', isEqualTo: 'completed')
-          .where('orderCompletionTimestamp', isGreaterThanOrEqualTo: _startDate)
-          .where('orderCompletionTimestamp', isLessThanOrEqualTo: adjustedEndDate)
-          .get();
-
-      if (vehicleSnapshot.docs.isEmpty) {
-        setState(() {
-          _reportData = {'isEmpty': true};
-          _isLoading = false;
-        });
-        return;
-      }
-
-      double totalSalesAmount = 0;
-      int numberOfOrders = vehicleSnapshot.docs.length;
-      Map<String, Map<String, dynamic>> productAggregates = {};
-      double totalTimeBasedRevenue = 0;
-      Map<String, double> revenueByCategory = {};
-
-      for (var doc in vehicleSnapshot.docs) {
-        Map<String, dynamic> vehicleData = doc.data() as Map<String, dynamic>;
-        totalSalesAmount += (vehicleData['totalAmount'] ?? 0.0).toDouble();
-        totalTimeBasedRevenue += (vehicleData['timeBasedCost'] ?? 0.0).toDouble();
-
-        List<dynamic> items = vehicleData['items'] ?? [];
-        for (var item in items) {
-          String productName = item['productName'] ?? 'Неизвестный товар';
-          String categoryId = item['categoryId'] ?? 'unknown_category';
-          int quantity = (item['quantity'] ?? 0).toInt();
-          double price = (item['price'] ?? 0.0).toDouble();
-          double revenueForItem = quantity * price;
-
-          // Aggregate product sales (for detailed breakdown list)
-          if (productAggregates.containsKey(productName)) {
-            productAggregates[productName]!['totalQuantitySold'] += quantity;
-            productAggregates[productName]!['totalRevenueFromProduct'] += revenueForItem;
-          } else {
-            productAggregates[productName] = {
-              'productName': productName,
-              'totalQuantitySold': quantity,
-              'totalRevenueFromProduct': revenueForItem,
-            };
-          }
-           // Aggregate revenue by category
-          revenueByCategory[categoryId] = (revenueByCategory[categoryId] ?? 0) + revenueForItem;
-        }
-      }
+      final vehicleSnapshot = await _fetchVehicleDataForReport(_startDate!, adjustedEndDate);
+      final processedData = _processReportData(vehicleSnapshot);
       
-      List<Map<String, dynamic>> detailedBreakdown = productAggregates.values.toList();
-
       setState(() {
-        _reportData = {
-          'totalSalesAmount': totalSalesAmount,
-          'numberOfOrders': numberOfOrders,
-          'detailedBreakdown': detailedBreakdown,
-          'timeBasedRevenue': totalTimeBasedRevenue,
-          'categoryRevenueBreakdown': revenueByCategory,
-          'isEmpty': false,
-        };
+        _reportData = processedData;
         _isLoading = false;
       });
 
     } catch (e) {
-      // print('Error generating report: $e');
       setState(() {
         _isLoading = false;
         _reportData = {'error': true, 'message': e.toString()};
       });
-      if(mounted){
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Ошибка при формировании отчета: ${e.toString()}')),
         );

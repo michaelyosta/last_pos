@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart'; // Import FirebaseAuth
 import 'package:pos_app/models/vehicle.dart'; // Import Vehicle model
 import 'manager_vehicles_list_screen.dart'; // Import vehicle list screen for navigation
 import 'package:pos_app/models/app_settings.dart'; // Import AppSettings model
+import 'package:pos_app/core/constants.dart'; // Import constants
 
 class PaymentQrScreen extends StatelessWidget {
   final String vehicleId;
@@ -22,9 +23,6 @@ class PaymentQrScreen extends StatelessWidget {
   // Function to finalize the payment and complete the order
   Future<void> _completePayment(BuildContext context) async {
     try {
-      // Get current server time
-      DateTime serverTime = await FirebaseFirestore.instance.collection('serverTime').add({'timestamp': FieldValue.serverTimestamp()}).then((ref) => ref.get()).then((snapshot) => snapshot.get('timestamp').toDate());
-
       // Get current manager ID
       String? managerId = FirebaseAuth.instance.currentUser?.uid;
 
@@ -39,14 +37,15 @@ class PaymentQrScreen extends StatelessWidget {
       }
 
       // Fetch the vehicle to get its entry time and current total amount
-      DocumentSnapshot vehicleDoc = await FirebaseFirestore.instance.collection('vehicles').doc(vehicleId).get();
+      DocumentSnapshot vehicleDoc = await FirebaseFirestore.instance.collection(FirestoreCollections.vehicles).doc(vehicleId).get(); // Use constant
       Vehicle vehicle = Vehicle.fromFirestore(vehicleDoc);
 
-      // Calculate total time in minutes
-      int totalMinutes = serverTime.difference(vehicle.entryTime.toDate()).inMinutes;
+      // Use client-side time for calculations
+      DateTime finalizationTime = DateTime.now();
+      int totalMinutes = finalizationTime.difference(vehicle.entryTime.toDate()).inMinutes;
 
       // Fetch app settings to get price per minute
-      DocumentSnapshot settingsDoc = await FirebaseFirestore.instance.collection('settings').doc('global_settings').get();
+      DocumentSnapshot settingsDoc = await FirebaseFirestore.instance.collection(FirestoreCollections.settings).doc(FirestoreDocuments.globalSettings).get(); // Use constants
       AppSettings appSettings = AppSettings.fromFirestore(settingsDoc);
       double pricePerMinute = appSettings.pricePerMinute;
 
@@ -57,21 +56,21 @@ class PaymentQrScreen extends StatelessWidget {
       double newTotalAmount = vehicle.totalAmount + timeBasedCost;
 
       Map<String, dynamic> updateData = {
-        'paymentStatus': 'completed',
-        'status': 'completed', // Mark vehicle as completed
+        'paymentStatus': PaymentStatuses.completed, // Use constant
+        'status': VehicleStatuses.completed, // Use constant // Mark vehicle as completed
         'paymentMethod': paymentMethod, // Set payment method from passed argument
-        'exitTime': Timestamp.fromDate(serverTime),
-        'totalTime': totalMinutes,
-        'timeBasedCost': timeBasedCost, // Save time-based cost
-        'totalAmount': newTotalAmount, // Update total amount
-        'orderCompletionTimestamp': serverTime, // Add order completion timestamp
+        'exitTime': FieldValue.serverTimestamp(), // Use server timestamp
+        'totalTime': totalMinutes, // Calculated using client-side time
+        'timeBasedCost': timeBasedCost, // Calculated using client-side time
+        'totalAmount': newTotalAmount, // Calculated using client-side time
+        'orderCompletionTimestamp': FieldValue.serverTimestamp(), // Use server timestamp
       };
 
-      if (managerId != null) { // This check is technically redundant due to the earlier return, but good for safety
+      if (managerId != null) { 
         updateData['managerId'] = managerId; // Add manager ID
       }
 
-      await FirebaseFirestore.instance.collection('vehicles').doc(vehicleId).update(updateData);
+      await FirebaseFirestore.instance.collection(FirestoreCollections.vehicles).doc(vehicleId).update(updateData); // Use constant
 
       if (context.mounted) { // Check if the widget is still in the tree
         ScaffoldMessenger.of(context).showSnackBar(

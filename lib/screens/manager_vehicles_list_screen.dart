@@ -9,6 +9,7 @@ import 'manager_vehicle_detail_screen.dart'; // Placeholder for detail screen
 import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth
 import 'login_screen.dart'; // Import LoginScreen
 import 'package:pos_app/models/app_settings.dart'; // Import AppSettings model
+import 'package:pos_app/core/constants.dart'; // Import constants
 
 class ManagerVehiclesListScreen extends StatefulWidget { // Changed to StatefulWidget
   final String managerId;
@@ -77,16 +78,18 @@ class _ManagerVehiclesListScreenState extends State<ManagerVehiclesListScreen> {
             icon: const Icon(Icons.logout),
             onPressed: () async {
               await FirebaseAuth.instance.signOut();
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-              );
+              if (context.mounted) { // Added mounted check
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                );
+              }
             },
           ),
         ],
       ),
       body: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance.collection('settings').doc('global_settings').snapshots(),
+        stream: FirebaseFirestore.instance.collection(FirestoreCollections.settings).doc(FirestoreDocuments.globalSettings).snapshots(), // Use constants
         builder: (context, settingsSnapshot) {
           if (settingsSnapshot.hasError) {
             return Center(child: Text('Ошибка загрузки настроек: ${settingsSnapshot.error}'));
@@ -99,8 +102,8 @@ class _ManagerVehiclesListScreenState extends State<ManagerVehiclesListScreen> {
 
           return StreamBuilder<List<Vehicle>>(
             stream: FirebaseFirestore.instance
-                .collection('vehicles')
-                .where('status', isEqualTo: 'active')
+                .collection(FirestoreCollections.vehicles) // Use constant
+                .where('status', isEqualTo: VehicleStatuses.active) // Use constant
                 .orderBy('entryTime', descending: true)
                 .snapshots()
                 .map((snapshot) => snapshot.docs.map((doc) => Vehicle.fromFirestore(doc)).toList()),

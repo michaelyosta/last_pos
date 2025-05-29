@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:pos_app/models/app_settings.dart';
+import 'package:pos_app/core/constants.dart'; // Import constants
 
 class AdminSettingsScreen extends StatefulWidget {
   const AdminSettingsScreen({Key? key}) : super(key: key);
@@ -12,7 +13,7 @@ class AdminSettingsScreen extends StatefulWidget {
 class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   final TextEditingController _priceController = TextEditingController();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final String _settingsDocId = 'global_settings'; // Fixed document ID for global settings
+  final String _settingsDocId = FirestoreDocuments.globalSettings; // Use constant
 
   @override
   void initState() {
@@ -22,13 +23,13 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
 
   Future<void> _loadSettings() async {
     try {
-      DocumentSnapshot doc = await _firestore.collection('settings').doc(_settingsDocId).get();
+      DocumentSnapshot doc = await _firestore.collection(FirestoreCollections.settings).doc(_settingsDocId).get(); // Use constant
       if (doc.exists) {
         AppSettings settings = AppSettings.fromFirestore(doc);
         _priceController.text = settings.pricePerMinute.toString();
       } else {
         // If document doesn't exist, create it with a default value
-        await _firestore.collection('settings').doc(_settingsDocId).set({
+        await _firestore.collection(FirestoreCollections.settings).doc(_settingsDocId).set({ // Use constant
           'pricePerMinute': 0.0,
         });
         _priceController.text = '0.0';
@@ -41,18 +42,42 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
   }
 
   Future<void> _saveSettings() async {
+    final String priceText = _priceController.text.trim();
+    if (priceText.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Цена не может быть пустой.')),
+        );
+      }
+      return;
+    }
+
+    double? newPrice = double.tryParse(priceText);
+
+    if (newPrice == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Неверный формат цены. Пожалуйста, введите корректное число.')),
+        );
+      }
+      return;
+    }
+
     try {
-      double newPrice = double.parse(_priceController.text);
-      await _firestore.collection('settings').doc(_settingsDocId).update({
+      await _firestore.collection(FirestoreCollections.settings).doc(_settingsDocId).update({ // Use constant
         'pricePerMinute': newPrice,
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Настройки сохранены успешно!')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Настройки сохранены успешно!')),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка сохранения настроек: ${e.toString()}')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка сохранения настроек: ${e.toString()}')),
+        );
+      }
     }
   }
 

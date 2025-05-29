@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
 import 'package:firebase_auth/firebase_auth.dart'; // Import Firebase Auth for createdBy
+import 'package:pos_app/core/constants.dart'; // Import constants
 
 class AdminAddProductScreen extends StatefulWidget { // Converted to StatefulWidget
   final String categoryId;
@@ -23,7 +24,7 @@ class _AdminAddProductScreenState extends State<AdminAddProductScreen> { // Adde
       try {
         String adminId = FirebaseAuth.instance.currentUser!.uid; // Get current admin ID
 
-        await FirebaseFirestore.instance.collection('products').add({
+        await FirebaseFirestore.instance.collection(FirestoreCollections.products).add({
           'name': _nameController.text.trim(),
           'description': _descriptionController.text.trim(),
           'price': double.parse(_priceController.text.trim()), // Parse price as double

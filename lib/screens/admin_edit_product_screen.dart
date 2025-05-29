@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
 import 'package:pos_app/models/product.dart'; // Import Product model
+import 'package:pos_app/core/constants.dart'; // Import constants
 
 class AdminEditProductScreen extends StatefulWidget { // Converted to StatefulWidget
   final String productId;
@@ -27,7 +28,7 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> { // Ad
   Future<void> _loadProductData() async {
     try {
       DocumentSnapshot productDoc = await FirebaseFirestore.instance
-          .collection('products')
+          .collection(FirestoreCollections.products) // Use constant
           .doc(widget.productId)
           .get();
 
@@ -56,7 +57,7 @@ class _AdminEditProductScreenState extends State<AdminEditProductScreen> { // Ad
   Future<void> _updateProduct() async {
     if (_formKey.currentState!.validate()) {
       try {
-        await FirebaseFirestore.instance.collection('products').doc(widget.productId).update({
+        await FirebaseFirestore.instance.collection(FirestoreCollections.products).doc(widget.productId).update({ // Use constant
           'name': _nameController.text.trim(),
           'description': _descriptionController.text.trim(),
           'price': double.parse(_priceController.text.trim()), // Parse price as double

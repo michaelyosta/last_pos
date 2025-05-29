@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:pos_app/models/product.dart';
 import 'package:pos_app/models/vehicle.dart'; // Import Vehicle model to update items
+import 'package:pos_app/core/constants.dart'; // Import constants
 
 class ProductSelectionScreen extends StatelessWidget {
   final String vehicleId;
@@ -19,7 +20,7 @@ class ProductSelectionScreen extends StatelessWidget {
   Future<void> _addItemToVehicle(BuildContext context, Product product) async {
     try {
       // Get the current vehicle document
-      DocumentReference vehicleRef = FirebaseFirestore.instance.collection('vehicles').doc(vehicleId);
+      DocumentReference vehicleRef = FirebaseFirestore.instance.collection(FirestoreCollections.vehicles).doc(vehicleId); // Use constant
       DocumentSnapshot vehicleDoc = await vehicleRef.get();
 
       if (vehicleDoc.exists) {
@@ -73,7 +74,7 @@ class ProductSelectionScreen extends StatelessWidget {
       ),
       body: StreamBuilder<List<Product>>(
         stream: FirebaseFirestore.instance
-            .collection('products')
+            .collection(FirestoreCollections.products) // Use constant
             .where('categoryId', isEqualTo: categoryId) // Filter products by category
             .orderBy('name') // Order products alphabetically
             .snapshots()
