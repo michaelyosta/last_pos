@@ -103,7 +103,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                 setState(() {
                   _categoriesFuture = _fetchCategories();
                 });
-                return _categoriesFuture;
+                await _categoriesFuture; // Await the completion of the new future
               },
               child: FutureBuilder<List<Category>>(
                 future: _categoriesFuture,
