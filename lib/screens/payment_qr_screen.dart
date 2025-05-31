@@ -116,12 +116,6 @@ class PaymentQrScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Removed vehicle.licensePlate display as it's not passed directly
-            // Text(
-            //   '🚗 ${vehicle.licensePlate}',
-            //   style: Theme.of(context).textTheme.headlineSmall,
-            //   textAlign: TextAlign.center,
-            // ),
             const SizedBox(height: 8.0),
             Text(
               'Сумма к оплате: ${totalAmount.toStringAsFixed(2)} тнг', // Use passed totalAmount

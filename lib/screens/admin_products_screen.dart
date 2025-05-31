@@ -46,13 +46,13 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
           content: Text('Вы уверены, что хотите удалить категорию "$categoryName"? Товары в этой категории не будут удалены, но останутся без категории и могут потребовать ручного переназначения в будущем.'),
           actions: <Widget>[
             TextButton(
-              child: const Text('Отмена'),
+              child: const Text('ОТМЕНА'),
               onPressed: () {
                 Navigator.of(context).pop(false); // Dismiss dialog and return false
               },
             ),
             TextButton(
-              child: const Text('Удалить'),
+              child: const Text('УДАЛИТЬ'),
               onPressed: () {
                 Navigator.of(context).pop(true); // Dismiss dialog and return true
               },
@@ -94,7 +94,7 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                   MaterialPageRoute(builder: (context) => const AdminAddCategoryScreen()),
                 );
               },
-              child: const Text('Добавить Новую Категорию'),
+              child: const Text('ДОБАВИТЬ НОВУЮ КАТЕГОРИЮ'),
             ),
           ),
           Expanded(

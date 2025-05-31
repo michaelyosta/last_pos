@@ -199,7 +199,7 @@ class _AdminCreateManagerScreenState extends State<AdminCreateManagerScreen> {
                   // Trigger validation display if form was already validated once
                   _formKey.currentState?.validate();
                 },
-                child: const Text('Сгенерировать номер'),
+                child: const Text('СГЕНЕРИРОВАТЬ НОМЕР'),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -225,7 +225,7 @@ class _AdminCreateManagerScreenState extends State<AdminCreateManagerScreen> {
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
                       )
-                    : const Text('Создать Менеджера'),
+                    : const Text('СОЗДАТЬ МЕНЕДЖЕРА'),
               ),
             ],
           ),

@@ -239,7 +239,7 @@ class _ManagerScanVehicleScreenState extends State<ManagerScanVehicleScreen> {
                       padding: const EdgeInsets.all(16.0),
                       child: ElevatedButton(
                         onPressed: _takePhoto,
-                        child: Text(_isTakingCarPhoto ? 'Сделать фото машины' : 'Сделать фото номера'),
+                        child: Text((_isTakingCarPhoto ? 'Сделать фото машины' : 'Сделать фото номера').toUpperCase()),
                       ),
                     ),
                   ],
@@ -259,7 +259,7 @@ class _ManagerScanVehicleScreenState extends State<ManagerScanVehicleScreen> {
                   const SizedBox(height: 16.0),
                   ElevatedButton(
                     onPressed: _manualEntry,
-                    child: const Text('Добавить машину вручную'),
+                    child: const Text('ДОБАВИТЬ МАШИНУ ВРУЧНУЮ'),
                   ),
                 ],
               ),

@@ -108,7 +108,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
             const SizedBox(height: 16.0),
             ElevatedButton(
               onPressed: _saveSettings,
-              child: const Text('Сохранить'),
+              child: const Text('СОХРАНИТЬ'),
             ),
           ],
         ),

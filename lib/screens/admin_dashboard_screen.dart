@@ -42,7 +42,7 @@ class AdminDashboardScreen extends StatelessWidget {
                   MaterialPageRoute(builder: (context) => const AdminProductsScreen()),
                 );
               },
-              child: const Text('Управление Товарами'),
+              child: const Text('УПРАВЛЕНИЕ ТОВАРАМИ'),
             ),
             const SizedBox(height: 16.0),
             ElevatedButton(
@@ -52,7 +52,7 @@ class AdminDashboardScreen extends StatelessWidget {
                   MaterialPageRoute(builder: (context) => const AdminManagerScreen()),
                 );
               },
-              child: const Text('Менеджер'),
+              child: const Text('МЕНЕДЖЕР'),
             ),
             const SizedBox(height: 16.0),
             ElevatedButton(
@@ -62,7 +62,7 @@ class AdminDashboardScreen extends StatelessWidget {
                   MaterialPageRoute(builder: (context) => const GeneralRevenueReportScreen()),
                 );
               },
-              child: const Text('Общий отчет по выручке'),
+              child: const Text('ОБЩИЙ ОТЧЕТ ПО ВЫРУЧКЕ'),
             ),
             const SizedBox(height: 16.0),
             ElevatedButton(
@@ -72,7 +72,7 @@ class AdminDashboardScreen extends StatelessWidget {
                   MaterialPageRoute(builder: (context) => const AdminSettingsScreen()),
                 );
               },
-              child: const Text('Настройки'),
+              child: const Text('НАСТРОЙКИ'),
             ),
             // TODO: Add more admin options like Analytics, etc.
           ],

@@ -234,7 +234,7 @@ class _AdminViewManagerReportScreenState extends State<AdminViewManagerReportScr
               children: [
                 ElevatedButton(
                   onPressed: () => _selectDate(context, true),
-                  child: const Text('Начальная дата'),
+                  child: const Text('НАЧАЛЬНАЯ ДАТА'),
                 ),
                 Text(_formatDate(_startDate)),
               ],
@@ -244,7 +244,7 @@ class _AdminViewManagerReportScreenState extends State<AdminViewManagerReportScr
               children: [
                 ElevatedButton(
                   onPressed: () => _selectDate(context, false),
-                  child: const Text('Конечная дата'),
+                  child: const Text('КОНЕЧНАЯ ДАТА'),
                 ),
                 Text(_formatDate(_endDate)),
               ],
@@ -252,7 +252,7 @@ class _AdminViewManagerReportScreenState extends State<AdminViewManagerReportScr
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: (_startDate != null && _endDate != null && !_isLoading) ? _generateReport : null,
-              child: const Text('Сформировать отчет'),
+              child: const Text('СФОРМИРОВАТЬ ОТЧЕТ'),
             ),
             const SizedBox(height: 24),
             if (_isLoading)
