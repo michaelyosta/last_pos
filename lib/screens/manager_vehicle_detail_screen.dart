@@ -284,6 +284,9 @@ class _ManagerVehicleDetailScreenState extends State<ManagerVehicleDetailScreen>
 
   // Helper method for Complete Button
   Widget _buildCompleteButton(Vehicle vehicle, double pricePerMinute, BuildContext context) {
+    if (vehicle.status != VehicleStatuses.active) {
+      return const SizedBox.shrink(); // Don't show button if not active
+    }
     return ElevatedButton(
       onPressed: () async {
         try {
