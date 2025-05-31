@@ -91,6 +91,7 @@ class _ManagerHistoryScreenState extends State<ManagerHistoryScreen> {
             stream: FirebaseFirestore.instance
                 .collection(FirestoreCollections.vehicles) // Use constant
                 .where('status', isEqualTo: VehicleStatuses.completed) // Use constant // Filter for completed vehicles
+                .where('managerId', isEqualTo: widget.managerId) // Added this line
                 .orderBy('exitTime', descending: true) // Order by exit time
                 .snapshots()
                 .map((snapshot) => snapshot.docs.map((doc) => Vehicle.fromFirestore(doc)).toList()),

@@ -57,7 +57,7 @@ class _ManagerVehicleDetailScreenState extends State<ManagerVehicleDetailScreen>
                     StreamBuilder<DocumentSnapshot>(
                       stream: FirebaseFirestore.instance
                           .collection(FirestoreCollections.serverTime)
-                          .doc('current') 
+                          .doc('current')
                           .snapshots(),
                       builder: (context, serverTimeSnapshot) {
                         if (!serverTimeSnapshot.hasData) {

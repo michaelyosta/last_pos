@@ -104,6 +104,7 @@ class _ManagerVehiclesListScreenState extends State<ManagerVehiclesListScreen> {
             stream: FirebaseFirestore.instance
                 .collection(FirestoreCollections.vehicles) // Use constant
                 .where('status', isEqualTo: VehicleStatuses.active) // Use constant
+                .where('managerId', isEqualTo: widget.managerId) // Added this line
                 .orderBy('entryTime', descending: true)
                 .snapshots()
                 .map((snapshot) => snapshot.docs.map((doc) => Vehicle.fromFirestore(doc)).toList()),

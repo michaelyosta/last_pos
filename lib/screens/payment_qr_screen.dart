@@ -66,7 +66,7 @@ class PaymentQrScreen extends StatelessWidget {
         'orderCompletionTimestamp': FieldValue.serverTimestamp(), // Use server timestamp
       };
 
-      if (managerId != null) { 
+      if (managerId != null) {
         updateData['managerId'] = managerId; // Add manager ID
       }
 

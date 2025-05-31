@@ -169,7 +169,7 @@ void main() {
       expect(find.textContaining('AA111AA'), findsOneWidget);
       expect(find.textContaining('BB222BB'), findsNothing);
     });
-    
+
     testWidgets('Search is case-insensitive', (WidgetTester tester) async {
       setupMockStreams(vehicles: getTestActiveVehicles(), settings: getTestAppSettings());
       await pumpScreen(tester);
@@ -179,7 +179,7 @@ void main() {
       await tester.pump();
       await tester.enterText(find.byType(TextField), 'bb222bb'); // Lowercase
       await tester.pumpAndSettle();
-      
+
       expect(find.byType(VehicleListItem), findsOneWidget);
       expect(find.textContaining('BB222BB'), findsOneWidget);
       expect(find.textContaining('AA111AA'), findsNothing);
@@ -236,7 +236,7 @@ void main() {
       expect(find.byType(VehicleListItem), findsNothing);
       expect(find.text('Машины с таким номером не найдены.'), findsOneWidget);
     });
-    
+
     testWidgets('Shows "Нет активных машин" if no vehicles initially', (WidgetTester tester) async {
       setupMockStreams(vehicles: [], settings: getTestAppSettings());
       await pumpScreen(tester);
@@ -246,15 +246,15 @@ void main() {
 
     testWidgets('Logout button is present and functional (mock navigation)', (WidgetTester tester) async {
       setupMockStreams(vehicles: [], settings: getTestAppSettings()); // No vehicles needed for this test
-      
+
       // This is a simplified test for logout.
       // It doesn't truly test Firebase signout but checks if the button exists.
       // Proper logout testing might involve checking navigation after signout.
       // For this, FirebaseAuth.instance would need to be mockable/injectable for the screen.
-      
+
       await pumpScreen(tester);
       await tester.pumpAndSettle();
-      
+
       expect(find.byIcon(Icons.logout), findsOneWidget);
       // Further testing of logout (e.g., navigation to LoginScreen) would require
       // mocking Navigator and FirebaseAuth.instance.signOut() behavior.

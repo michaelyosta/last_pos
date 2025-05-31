@@ -99,7 +99,7 @@ class MockQuery<T extends Object?> implements Query<T> {
     }
     return this; // Default: return self
   }
-  
+
   @override
   Query<T> limit(int limit) {
     if (mockLimitHandler != null) {
@@ -204,7 +204,7 @@ void main() {
 
     testWidgets('Tapping FloatingActionButton navigates to AdminCreateManagerScreen', (WidgetTester tester) async {
       await pumpScreen(tester);
-      
+
       final fab = find.byType(FloatingActionButton);
       expect(fab, findsOneWidget);
 

@@ -72,7 +72,7 @@ void main() {
     when(mockVehiclesQuery.snapshots()).thenAnswer((_) => Stream.value(vehicleSnapshot));
     when(mockGlobalSettingsDoc.snapshots()).thenAnswer((_) => Stream.value(settingsDocSnapshot));
   }
-  
+
   Future<void> pumpManagerHistoryScreen(WidgetTester tester, {String managerId = 'test_manager'}) async {
     // Replace FirebaseFirestore.instance with our mock
     final originalInstance = FirebaseFirestore.instance;
@@ -145,13 +145,13 @@ void main() {
       _mockFirestoreStreams(vehicles, _getTestAppSettings());
       await pumpManagerHistoryScreen(tester);
       await tester.pumpAndSettle();
-      
+
       await tester.tap(find.byIcon(Icons.search));
       await tester.pump();
-      
+
       await tester.enterText(find.byType(TextField), 'kz456'); // Lowercase search
       await tester.pumpAndSettle();
-      
+
       expect(find.widgetWithText(VehicleListItem, 'KZ123ABC'), findsNothing);
       expect(find.widgetWithText(VehicleListItem, 'KZ456DEF'), findsOneWidget);
     });
@@ -175,7 +175,7 @@ void main() {
       // Clear search by tapping close
       await tester.tap(find.byIcon(Icons.close));
       await tester.pumpAndSettle();
-      
+
       expect(find.byType(VehicleListItem), findsNWidgets(3)); // Full list
       expect(find.text('История Обслуживания'), findsOneWidget); // Title restored
     });
@@ -188,10 +188,10 @@ void main() {
 
       await tester.tap(find.byIcon(Icons.search));
       await tester.pump();
-      
+
       await tester.enterText(find.byType(TextField), 'XYZ777');
       await tester.pumpAndSettle();
-      
+
       expect(find.byType(VehicleListItem), findsNothing);
       expect(find.text('Машины с таким номером не найдены.'), findsOneWidget);
     });

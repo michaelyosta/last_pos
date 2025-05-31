@@ -191,7 +191,7 @@ class _GeneralRevenueReportScreenState extends State<GeneralRevenueReportScreen>
       DateTime adjustedEndDate = DateTime(_endDate!.year, _endDate!.month, _endDate!.day, 23, 59, 59);
       final vehicleSnapshot = await _fetchVehicleDataForGeneralReport(_startDate!, adjustedEndDate);
       final processedData = _processGeneralReportData(vehicleSnapshot);
-      
+
       setState(() {
         _reportData = processedData;
         _isLoading = false;
