@@ -13,6 +13,28 @@ class AdminProductsScreen extends StatefulWidget {
 }
 
 class _AdminProductsScreenState extends State<AdminProductsScreen> {
+  Future<List<Category>>? _categoriesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _categoriesFuture = _fetchCategories();
+  }
+
+  Future<List<Category>> _fetchCategories() {
+    return FirebaseFirestore.instance
+        .collection(FirestoreCollections.categories) // Use constant
+        .orderBy('displayName')
+        .get()
+        .then((snapshot) => snapshot.docs.map((doc) => Category.fromFirestore(doc)).toList());
+  }
+
+  void _refreshCategories() {
+    setState(() {
+      _categoriesFuture = _fetchCategories();
+    });
+  }
+
   // Function to delete a category
   Future<void> _deleteCategory(BuildContext context, String categoryId, String categoryName) async {
     // Show confirmation dialog
@@ -76,71 +98,75 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
             ),
           ),
           Expanded(
-            child: StreamBuilder<List<Category>>(
-              stream: FirebaseFirestore.instance
-                  .collection(FirestoreCollections.categories) // Use constant
-                  .orderBy('displayName') // Order categories alphabetically
-                  .snapshots()
-                  .map((snapshot) => snapshot.docs.map((doc) => Category.fromFirestore(doc)).toList()),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Center(child: Text('Ошибка загрузки категорий: ${snapshot.error}'));
-                }
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('Нет доступных категорий'));
-                }
-
-                final categories = snapshot.data!;
-
-                return ListView.builder(
-                  itemCount: categories.length,
-                  itemBuilder: (context, index) {
-                    final category = categories[index];
-                    return ListTile(
-                      title: Text(category.displayName),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.arrow_forward_ios),
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => AdminProductListScreen(
-                                    categoryId: category.id,
-                                    categoryDisplayName: category.displayName,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed: () {
-                              _deleteCategory(context, category.id, category.displayName);
-                            },
-                          ),
-                        ],
-                      ),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => AdminProductListScreen(
-                              categoryId: category.id,
-                              categoryDisplayName: category.displayName,
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                );
+            child: RefreshIndicator(
+              onRefresh: () async {
+                setState(() {
+                  _categoriesFuture = _fetchCategories();
+                });
+                return _categoriesFuture;
               },
+              child: FutureBuilder<List<Category>>(
+                future: _categoriesFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Ошибка загрузки категорий: ${snapshot.error}'));
+                  }
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Center(child: Text('Нет доступных категорий. Потяните вниз для обновления.')); // Updated message
+                  }
+
+                  final categories = snapshot.data!;
+
+                  return ListView.builder(
+                    itemCount: categories.length,
+                    itemBuilder: (context, index) {
+                      final category = categories[index];
+                      return ListTile(
+                        title: Text(category.displayName),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.arrow_forward_ios),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => AdminProductListScreen(
+                                      categoryId: category.id,
+                                      categoryDisplayName: category.displayName,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete),
+                              onPressed: () {
+                                _deleteCategory(context, category.id, category.displayName);
+                              },
+                            ),
+                          ],
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AdminProductListScreen(
+                                categoryId: category.id,
+                                categoryDisplayName: category.displayName,
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ),
         ],

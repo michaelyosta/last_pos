@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
+import 'package:pos_app/utils/time_cost_calculator.dart'; // Import TimeCostCalculator
 
 class TimerWidget extends StatefulWidget {
   final Timestamp entryTime;
@@ -34,15 +35,9 @@ class _TimerWidgetState extends State<TimerWidget> {
 
   void _updateDisplayTime() {
     DateTime now = DateTime.now();
-    DateTime entryDateTime = widget.entryTime.toDate();
-    Duration difference = now.difference(entryDateTime);
-
-    int hours = difference.inHours;
-    int minutes = difference.inMinutes % 60;
-    int seconds = difference.inSeconds % 60;
-
-    _displayTime =
-        '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    // DateTime entryDateTime = widget.entryTime.toDate(); // Not needed directly
+    Duration difference = TimeCostCalculator.calculateDuration(widget.entryTime, now);
+    _displayTime = TimeCostCalculator.formatDurationHHMMSS(difference);
   }
 
   @override

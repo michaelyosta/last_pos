@@ -48,3 +48,6 @@ class FirestoreDocuments {
   static const String globalSettings = 'global_settings';
   // static const String serverTimeCurrent = 'current'; // For serverTime doc, if that pattern was kept.
 }
+
+// Pagination
+const int FIRESTORE_PAGE_LIMIT = 20;

@@ -93,6 +93,7 @@ class _ManagerHistoryScreenState extends State<ManagerHistoryScreen> {
                 .where('status', isEqualTo: VehicleStatuses.completed) // Use constant // Filter for completed vehicles
                 .where('managerId', isEqualTo: widget.managerId) // Added this line
                 .orderBy('exitTime', descending: true) // Order by exit time
+                .limit(FIRESTORE_PAGE_LIMIT) // Basic pagination: Load more functionality not yet implemented.
                 .snapshots()
                 .map((snapshot) => snapshot.docs.map((doc) => Vehicle.fromFirestore(doc)).toList()),
             builder: (context, snapshot) {
@@ -102,44 +103,45 @@ class _ManagerHistoryScreenState extends State<ManagerHistoryScreen> {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
-              if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Center(child: Text('История обслуживания пуста'));
-              }
 
-              List<Vehicle> vehicles = snapshot.data!;
+              List<Vehicle> allVehicles = snapshot.data ?? [];
+              List<Vehicle> displayedVehicles = allVehicles;
 
               if (_searchQuery.isNotEmpty) {
-                vehicles = vehicles.where((vehicle) {
+                displayedVehicles = allVehicles.where((vehicle) {
                   return vehicle.licensePlate.toLowerCase().contains(_searchQuery.toLowerCase().trim());
                 }).toList();
               }
-              if (vehicles.isEmpty && _searchQuery.isNotEmpty) {
-                return const Center(child: Text('Машины с таким номером не найдены.'));
+
+              if (displayedVehicles.isNotEmpty) {
+                return ListView.builder(
+                  itemCount: displayedVehicles.length,
+                  itemBuilder: (context, index) {
+                    final vehicle = displayedVehicles[index];
+                    return VehicleListItem(
+                      vehicle: vehicle,
+                      pricePerMinute: pricePerMinute,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ManagerVehicleDetailScreen(
+                              vehicleId: vehicle.id,
+                              managerId: widget.managerId,
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                );
+              } else {
+                if (_searchQuery.isNotEmpty) {
+                  return const Center(child: Text('Машины с таким номером не найдены.'));
+                } else {
+                  return const Center(child: Text('История обслуживания пуста'));
+                }
               }
-
-
-              return ListView.builder(
-                itemCount: vehicles.length,
-                itemBuilder: (context, index) {
-                  final vehicle = vehicles[index];
-                  // Reuse VehicleListItem, it handles displaying total time for non-active status
-                  return VehicleListItem(
-                    vehicle: vehicle,
-                    pricePerMinute: pricePerMinute, // Pass pricePerMinute
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                        builder: (context) => ManagerVehicleDetailScreen(
-                          vehicleId: vehicle.id,
-                          managerId: widget.managerId, // Pass managerId here
-                        ),
-                        ),
-                      );
-                    },
-                  );
-                },
-              );
             },
           );
         },

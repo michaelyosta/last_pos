@@ -106,6 +106,7 @@ class _ManagerVehiclesListScreenState extends State<ManagerVehiclesListScreen> {
                 .where('status', isEqualTo: VehicleStatuses.active) // Use constant
                 .where('managerId', isEqualTo: widget.managerId) // Added this line
                 .orderBy('entryTime', descending: true)
+                .limit(FIRESTORE_PAGE_LIMIT) // Basic pagination: Load more functionality not yet implemented.
                 .snapshots()
                 .map((snapshot) => snapshot.docs.map((doc) => Vehicle.fromFirestore(doc)).toList()),
             builder: (context, snapshot) {
@@ -115,47 +116,45 @@ class _ManagerVehiclesListScreenState extends State<ManagerVehiclesListScreen> {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
-              if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Center(child: Text('Нет активных машин'));
-              }
 
-              List<Vehicle> vehicles = snapshot.data!;
+              List<Vehicle> allVehicles = snapshot.data ?? [];
+              List<Vehicle> displayedVehicles = allVehicles;
 
               if (_searchQuery.isNotEmpty) {
-                vehicles = vehicles.where((vehicle) {
+                displayedVehicles = allVehicles.where((vehicle) {
                   return vehicle.licensePlate.toLowerCase().contains(_searchQuery.toLowerCase().trim());
                 }).toList();
               }
 
-              if (vehicles.isEmpty && _searchQuery.isNotEmpty) {
-                return const Center(child: Text('Машины с таким номером не найдены.'));
-              }
-               if (vehicles.isEmpty && _searchQuery.isEmpty && (snapshot.data?.isEmpty ?? true) ) {
-                 return const Center(child: Text('Нет активных машин'));
-               }
-
-
-              return ListView.builder(
-                itemCount: vehicles.length,
-                itemBuilder: (context, index) {
-                  final vehicle = vehicles[index];
-                  return VehicleListItem(
-                    vehicle: vehicle,
-                    pricePerMinute: pricePerMinute, // Pass pricePerMinute
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ManagerVehicleDetailScreen(
-                            vehicleId: vehicle.id,
-                            managerId: widget.managerId, // Pass managerId
+              if (displayedVehicles.isNotEmpty) {
+                return ListView.builder(
+                  itemCount: displayedVehicles.length,
+                  itemBuilder: (context, index) {
+                    final vehicle = displayedVehicles[index];
+                    return VehicleListItem(
+                      vehicle: vehicle,
+                      pricePerMinute: pricePerMinute,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ManagerVehicleDetailScreen(
+                              vehicleId: vehicle.id,
+                              managerId: widget.managerId,
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                  );
-                },
-              );
+                        );
+                      },
+                    );
+                  },
+                );
+              } else {
+                if (_searchQuery.isNotEmpty) {
+                  return const Center(child: Text('Машины с таким номером не найдены.'));
+                } else {
+                  return const Center(child: Text('Нет активных машин'));
+                }
+              }
             },
           );
         },
