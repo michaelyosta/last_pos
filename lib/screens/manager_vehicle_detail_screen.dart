@@ -12,6 +12,7 @@ import 'manager_order_confirmation_screen.dart'; // Import order confirmation sc
 import 'package:pos_app/models/app_settings.dart'; // Import AppSettings model
 import 'package:pos_app/screens/payment_qr_screen.dart'; // Import PaymentQrScreen
 import 'package:pos_app/core/constants.dart'; // Import constants
+import 'package:pos_app/utils/time_cost_calculator.dart'; // Import TimeCostCalculator
 
 class ManagerVehicleDetailScreen extends StatefulWidget {
   final String vehicleId;
@@ -54,29 +55,32 @@ class _ManagerVehicleDetailScreenState extends State<ManagerVehicleDetailScreen>
                   children: [
                     TimerWidget(entryTime: vehicle.entryTime),
                     const SizedBox(width: 16.0),
-                    StreamBuilder<DocumentSnapshot>(
-                      stream: FirebaseFirestore.instance
-                          .collection(FirestoreCollections.serverTime)
-                          .doc('current') 
-                          .snapshots(),
-                      builder: (context, serverTimeSnapshot) {
-                        if (!serverTimeSnapshot.hasData) {
-                          return const Text('ИТОГО: Calculating...');
+                    StreamBuilder<Duration>(
+                      stream: Stream.periodic(const Duration(seconds: 1), (_) {
+                        return DateTime.now().difference(vehicle.entryTime.toDate());
+                      }),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) {
+                          // Calculate initial value for the first frame
+                          DateTime now = DateTime.now();
+                          Duration difference = TimeCostCalculator.calculateDuration(vehicle.entryTime, now);
+                          double timeBasedCost = TimeCostCalculator.calculateTimeBasedCost(difference, pricePerMinute);
+                          return Text(
+                            'Стоимость за время: ${timeBasedCost.toStringAsFixed(2)} тнг',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          );
                         }
-                        DateTime now = DateTime.now();
-                        DateTime entryDateTime = vehicle.entryTime.toDate();
-                        Duration difference = now.difference(entryDateTime);
-                        int totalMinutes = difference.inMinutes;
-                        double timeBasedCost = totalMinutes * pricePerMinute;
+                        final Duration difference = snapshot.data!;
+                        final double timeBasedCost = TimeCostCalculator.calculateTimeBasedCost(difference, pricePerMinute);
                         return Text(
-                          'ИТОГО: ${timeBasedCost.toStringAsFixed(2)} тнг',
+                          'Стоимость за время: ${timeBasedCost.toStringAsFixed(2)} тнг',
                           style: Theme.of(context).textTheme.titleMedium,
                         );
                       },
                     ),
                   ],
                 )
-              : Text('Время обслуживания: ${(vehicle.totalTime / 60).floor()}h ${vehicle.totalTime % 60}m'),
+              : Text('Время обслуживания: ${TimeCostCalculator.formatDurationHoursMinutes(Duration(minutes: vehicle.totalTime))}'),
         ],
       ),
     );
@@ -164,96 +168,116 @@ class _ManagerVehicleDetailScreenState extends State<ManagerVehicleDetailScreen>
     );
   }
 
-  // Helper method for Price Summary Section
+  // Helper method for "Стоимость товаров/услуг"
+  Widget _buildItemsCostRow(Vehicle vehicle, BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Стоимость товаров/услуг:',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          Text(
+            '${vehicle.totalAmount} тнг',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method for "Стоимость за время"
+  Widget _buildTimeCostRow(Vehicle vehicle, double pricePerMinute, BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Стоимость за время (${pricePerMinute.toStringAsFixed(0)} тнг/мин):',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          vehicle.status == VehicleStatuses.active
+              ? StreamBuilder<Duration>(
+                  stream: Stream.periodic(const Duration(seconds: 1), (_) {
+                    return DateTime.now().difference(vehicle.entryTime.toDate());
+                  }),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      DateTime now = DateTime.now();
+                      Duration difference = TimeCostCalculator.calculateDuration(vehicle.entryTime, now);
+                      double timeBasedCost = TimeCostCalculator.calculateTimeBasedCost(difference, pricePerMinute);
+                      return Text(
+                        '${timeBasedCost.toStringAsFixed(2)} тнг',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      );
+                    }
+                    final Duration difference = snapshot.data!;
+                    final double timeBasedCost = TimeCostCalculator.calculateTimeBasedCost(difference, pricePerMinute);
+                    return Text(
+                      '${timeBasedCost.toStringAsFixed(2)} тнг',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    );
+                  },
+                )
+              : Text(
+                  '${(vehicle.timeBasedCost ?? 0.0).toStringAsFixed(2)} тнг',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method for "ИТОГО"
+  Widget _buildGrandTotalRow(Vehicle vehicle, double pricePerMinute, BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'ИТОГО:',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          StreamBuilder<Object>(
+            stream: vehicle.status == VehicleStatuses.active
+                ? Stream.periodic(const Duration(seconds: 1), (int i) => i)
+                : Stream.value(Object()), // For non-active, emit a valid Object
+            builder: (context, timerSnapshot) {
+              if (vehicle.status == VehicleStatuses.active) {
+                DateTime now = DateTime.now();
+                Duration difference = TimeCostCalculator.calculateDuration(vehicle.entryTime, now);
+                double liveTimeBasedCost = TimeCostCalculator.calculateTimeBasedCost(difference, pricePerMinute);
+                double displayTotal = vehicle.totalAmount + liveTimeBasedCost;
+                return Text(
+                  '${displayTotal.toStringAsFixed(2)} тнг',
+                  style: Theme.of(context).textTheme.titleLarge,
+                );
+              } else {
+                return Text(
+                  '${vehicle.totalAmount.toStringAsFixed(2)} тнг',
+                  style: Theme.of(context).textTheme.titleLarge,
+                );
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Refactored Helper method for Price Summary Section
   Widget _buildPriceSummarySection(Vehicle vehicle, double pricePerMinute, BuildContext context) {
     return Column(
       children: [
         const Divider(),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Стоимость товаров/услуг:',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              Text(
-                '${vehicle.totalAmount} тнг',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Стоимость за время (${pricePerMinute.toStringAsFixed(0)} тнг/мин):', // Ensure pricePerMinute is formatted if it can have decimals
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              StreamBuilder<DocumentSnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection(FirestoreCollections.serverTime)
-                    .doc('current')
-                    .snapshots(),
-                builder: (context, serverTimeSnapshot) {
-                  if (!serverTimeSnapshot.hasData) {
-                    return const Text('Calculating...');
-                  }
-                  DateTime now = DateTime.now();
-                  DateTime entryDateTime = vehicle.entryTime.toDate();
-                  Duration difference = now.difference(entryDateTime);
-                  int totalMinutes = difference.inMinutes;
-                  double timeBasedCost = totalMinutes * pricePerMinute;
-                  return Text(
-                    '${timeBasedCost.toStringAsFixed(2)} тнг',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
+        _buildItemsCostRow(vehicle, context),
+        _buildTimeCostRow(vehicle, pricePerMinute, context),
         const Divider(),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'ИТОГО:',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              StreamBuilder<Object>(
-                stream: vehicle.status == VehicleStatuses.active
-                    ? Stream.periodic(const Duration(seconds: 1), (int i) => i)
-                    : Stream.value(Object()), // For non-active, emit a valid Object
-                builder: (context, timerSnapshot) {
-                  if (vehicle.status == VehicleStatuses.active) {
-                    DateTime now = DateTime.now();
-                    DateTime entryDateTime = vehicle.entryTime.toDate();
-                    Duration difference = now.difference(entryDateTime);
-                    int totalMinutes = difference.inMinutes;
-                    double liveTimeBasedCost = totalMinutes * pricePerMinute;
-                    double displayTotal = vehicle.totalAmount + liveTimeBasedCost;
-                    return Text(
-                      '${displayTotal.toStringAsFixed(2)} тнг',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    );
-                  } else {
-                    return Text(
-                      '${vehicle.totalAmount.toStringAsFixed(2)} тнг',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    );
-                  }
-                },
-              ),
-            ],
-          ),
-        ),
+        _buildGrandTotalRow(vehicle, pricePerMinute, context),
       ],
     );
   }
@@ -264,9 +288,9 @@ class _ManagerVehicleDetailScreenState extends State<ManagerVehicleDetailScreen>
       onPressed: () async {
         try {
           DateTime now = DateTime.now();
-          Duration difference = now.difference(vehicle.entryTime.toDate());
-          int totalMinutes = difference.inMinutes;
-          double timeBasedCost = totalMinutes * pricePerMinute;
+          Duration difference = TimeCostCalculator.calculateDuration(vehicle.entryTime, now);
+          // int totalMinutesForDB = difference.inMinutes; // This will be used for vehicle.totalTime if needed
+          double timeBasedCost = TimeCostCalculator.calculateTimeBasedCost(difference, pricePerMinute);
           double finalTotalAmount = vehicle.totalAmount + timeBasedCost;
 
           String? paymentMethod = await showDialog<String>(

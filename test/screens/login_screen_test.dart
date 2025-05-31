@@ -83,7 +83,7 @@ void main() {
 
     testWidgets('Shows error for empty email or password', (WidgetTester tester) async {
       await pumpLoginScreen(tester);
-      
+
       await tester.tap(find.widgetWithText(ElevatedButton, 'ВОЙТИ'));
       await tester.pumpAndSettle(); // For SnackBar
       expect(find.text('Пожалуйста, введите Email и Пароль'), findsOneWidget); // General empty fields message
@@ -97,26 +97,26 @@ void main() {
     testWidgets('Login fails with incorrect credentials (user-not-found)', (WidgetTester tester) async {
       when(mockAuth.signInWithEmailAndPassword(email: anyNamed('email'), password: anyNamed('password')))
           .thenThrow(FirebaseAuthException(code: 'user-not-found'));
-      
+
       await pumpLoginScreen(tester);
       await tester.enterText(find.widgetWithText(TextFormField, 'Email'), 'wrong@example.com');
       await tester.enterText(find.widgetWithText(TextFormField, 'Пароль (для Администратора)'), 'password');
       await tester.tap(find.widgetWithText(ElevatedButton, 'ВОЙТИ'));
       await tester.pumpAndSettle();
-      
+
       expect(find.text('Пользователь не найден.'), findsOneWidget);
     });
 
     testWidgets('Login fails with incorrect credentials (wrong-password)', (WidgetTester tester) async {
       when(mockAuth.signInWithEmailAndPassword(email: anyNamed('email'), password: anyNamed('password')))
           .thenThrow(FirebaseAuthException(code: 'wrong-password'));
-      
+
       await pumpLoginScreen(tester);
       await tester.enterText(find.widgetWithText(TextFormField, 'Email'), 'test@example.com');
       await tester.enterText(find.widgetWithText(TextFormField, 'Пароль (для Администратора)'), 'wrongpass');
       await tester.tap(find.widgetWithText(ElevatedButton, 'ВОЙТИ'));
       await tester.pumpAndSettle();
-      
+
       expect(find.text('Неверный пароль.'), findsOneWidget);
     });
 
@@ -155,29 +155,29 @@ void main() {
 
     testWidgets('Shows error if user document not found in Firestore', (WidgetTester tester) async {
       when(mockUserDocSnapshot.exists).thenReturn(false); // User doc does not exist
-      
+
       await pumpLoginScreen(tester);
       await tester.enterText(find.widgetWithText(TextFormField, 'Email'), 'user_no_doc@example.com');
       await tester.enterText(find.widgetWithText(TextFormField, 'Пароль (для Администратора)'), 'password');
       await tester.tap(find.widgetWithText(ElevatedButton, 'ВОЙТИ'));
       await tester.pumpAndSettle();
-      
+
       expect(find.text('Данные пользователя не найдены'), findsOneWidget);
     });
 
     testWidgets('Shows error for unknown user role', (WidgetTester tester) async {
       when(mockUserDocSnapshot.exists).thenReturn(true);
       when(mockUserDocSnapshot.get('role')).thenReturn('unknown_role');
-      
+
       await pumpLoginScreen(tester);
       await tester.enterText(find.widgetWithText(TextFormField, 'Email'), 'unknown_role@example.com');
       await tester.enterText(find.widgetWithText(TextFormField, 'Пароль (для Администратора)'), 'password');
       await tester.tap(find.widgetWithText(ElevatedButton, 'ВОЙТИ'));
       await tester.pumpAndSettle();
-      
+
       expect(find.text('Неизвестная роль пользователя'), findsOneWidget);
     });
-    
+
     testWidgets('Password field label is correct', (WidgetTester tester) async {
       await pumpLoginScreen(tester);
       // The original label "Пароль (для Администратора)" was kept in the refactored screen.

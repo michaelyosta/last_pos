@@ -5,6 +5,7 @@ import 'package:pos_app/models/vehicle.dart'; // Import Vehicle model
 import 'manager_vehicles_list_screen.dart'; // Import vehicle list screen for navigation
 import 'package:pos_app/models/app_settings.dart'; // Import AppSettings model
 import 'package:pos_app/core/constants.dart'; // Import constants
+import 'package:pos_app/utils/time_cost_calculator.dart'; // Import TimeCostCalculator
 
 class PaymentQrScreen extends StatelessWidget {
   final String vehicleId;
@@ -42,18 +43,25 @@ class PaymentQrScreen extends StatelessWidget {
 
       // Use client-side time for calculations
       DateTime finalizationTime = DateTime.now();
-      int totalMinutes = finalizationTime.difference(vehicle.entryTime.toDate()).inMinutes;
+      // int totalMinutes = finalizationTime.difference(vehicle.entryTime.toDate()).inMinutes; // Old calculation
 
       // Fetch app settings to get price per minute
       DocumentSnapshot settingsDoc = await FirebaseFirestore.instance.collection(FirestoreCollections.settings).doc(FirestoreDocuments.globalSettings).get(); // Use constants
       AppSettings appSettings = AppSettings.fromFirestore(settingsDoc);
       double pricePerMinute = appSettings.pricePerMinute;
 
-      // Calculate time-based cost
-      double timeBasedCost = totalMinutes * pricePerMinute;
+      // Calculate time-based cost using TimeCostCalculator
+      Duration actualDifference = TimeCostCalculator.calculateDuration(vehicle.entryTime, finalizationTime);
+      int totalMinutes = actualDifference.inMinutes; // This is correct for storing total service time
+      double timeBasedCost = TimeCostCalculator.calculateTimeBasedCost(actualDifference, pricePerMinute);
 
-      // Calculate new total amount (should be consistent with what was passed)
+      // Calculate new total amount. vehicle.totalAmount is the sum of item costs.
+      // The passed `totalAmount` to this screen was already finalTotalAmount from detail screen.
+      // However, for consistency and to ensure the final stored amount reflects this exact calculation:
       double newTotalAmount = vehicle.totalAmount + timeBasedCost;
+      // It's important that vehicle.totalAmount here refers to the sum of *items* before time cost.
+      // If vehicle.totalAmount from Firestore for an active vehicle already includes some preliminary time calc,
+      // this might lead to double counting. Assuming vehicle.totalAmount for active is items only.
 
       Map<String, dynamic> updateData = {
         'paymentStatus': PaymentStatuses.completed, // Use constant
@@ -66,7 +74,7 @@ class PaymentQrScreen extends StatelessWidget {
         'orderCompletionTimestamp': FieldValue.serverTimestamp(), // Use server timestamp
       };
 
-      if (managerId != null) { 
+      if (managerId != null) {
         updateData['managerId'] = managerId; // Add manager ID
       }
 

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:pos_app/models/vehicle.dart';
-import 'package:pos_app/widgets/timer_widget.dart'; // We will create this widget next
+import 'package:pos_app/widgets/timer_widget.dart';
+import 'package:pos_app/core/constants.dart';
+import 'package:pos_app/utils/time_cost_calculator.dart'; // Import TimeCostCalculator
 
-import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
+// vehicle.entryTime.toDate() requires Timestamp from cloud_firestore.
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class VehicleListItem extends StatelessWidget {
   final Vehicle vehicle;
@@ -31,27 +34,33 @@ class VehicleListItem extends StatelessWidget {
               : null,
         ),
         title: Text(vehicle.licensePlate),
-        trailing: vehicle.status == 'active'
+        trailing: vehicle.status == VehicleStatuses.active // Use constant
             ? Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TimerWidget(entryTime: vehicle.entryTime),
                   const SizedBox(width: 8.0),
-                  StreamBuilder<DocumentSnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection('serverTime')
-                        .doc('current') // Assuming a document to get server time
-                        .snapshots(),
-                    builder: (context, serverTimeSnapshot) {
-                      if (!serverTimeSnapshot.hasData) {
-                        return const Text('Calculating...');
+                  StreamBuilder<Duration>(
+                    stream: Stream.periodic(const Duration(seconds: 1), (_) {
+                      return DateTime.now().difference(vehicle.entryTime.toDate());
+                    }),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        // Calculate initial value immediately for the first frame
+                        DateTime now = DateTime.now();
+                        DateTime entryDateTime = vehicle.entryTime.toDate();
+                        // Duration difference = now.difference(entryDateTime); // Not needed directly
+                        Duration difference = TimeCostCalculator.calculateDuration(vehicle.entryTime, now);
+                        // int totalMinutes = difference.inMinutes; // Not needed directly
+                        double timeBasedCost = TimeCostCalculator.calculateTimeBasedCost(difference, pricePerMinute);
+                        return Text(
+                          '${timeBasedCost.toStringAsFixed(2)} тнг',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        );
                       }
-                      DateTime now = DateTime.now();
-                      DateTime entryDateTime = vehicle.entryTime.toDate();
-                      Duration difference = now.difference(entryDateTime);
-                      int totalMinutes = difference.inMinutes;
-                      double timeBasedCost = totalMinutes * pricePerMinute;
-
+                      final Duration difference = snapshot.data!;
+                      // final int totalMinutes = difference.inMinutes; // Not needed directly
+                      final double timeBasedCost = TimeCostCalculator.calculateTimeBasedCost(difference, pricePerMinute);
                       return Text(
                         '${timeBasedCost.toStringAsFixed(2)} тнг',
                         style: Theme.of(context).textTheme.bodyMedium,
@@ -60,7 +69,7 @@ class VehicleListItem extends StatelessWidget {
                   ),
                 ],
               )
-            : Text('${(vehicle.totalTime / 60).floor()}h ${vehicle.totalTime % 60}m'), // Display total time for completed vehicles
+            : Text(TimeCostCalculator.formatDurationHoursMinutes(Duration(minutes: vehicle.totalTime))), // Use formatter
         onTap: onTap,
       ),
     );

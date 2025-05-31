@@ -133,7 +133,7 @@ class MockFirebaseFirestore implements FirebaseFirestore {
     lastSetDocumentPath = documentPath;
     return MockDocumentReference(this, documentPath.split('/').last, collectionPath: documentPath.split('/').first);
   }
-  
+
   // Store data passed to set, used by MockDocumentReference
   void recordSet(Map<String,dynamic> data, String path) {
     lastSetData = data;
@@ -203,7 +203,7 @@ class MockDocumentReference<T extends Object?> implements DocumentReference<T> {
   final String collectionPath;
 
   MockDocumentReference(this.firestore, this.id, {required this.collectionPath});
-  
+
   String get path => '$collectionPath/$id';
 
   @override
@@ -323,7 +323,7 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('Пожалуйста, сгенерируйте номер менеджера'), findsOneWidget);
       });
-      
+
       testWidgets('Generated number with less than 6 digits (if possible by error) shows error', (WidgetTester tester) async {
         await pumpScreen(tester);
         await tester.enterText(find.byWidgetPredicate((w) => w is TextFormField && w.decoration?.labelText == 'Имя'), 'Test Name');
@@ -387,7 +387,7 @@ void main() {
 
       // Fill password
       await tester.enterText(find.byWidgetPredicate((w) => w is TextFormField && w.decoration?.labelText == 'Пароль'), managerPassword);
-      
+
       // Create manager
       await tester.tap(find.widgetWithText(ElevatedButton, 'Создать Менеджера'));
       await tester.pumpAndSettle(); // For SnackBar and async operations
